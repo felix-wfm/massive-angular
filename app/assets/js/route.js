@@ -1,9 +1,9 @@
 angular.module('app')
-    .config(['$stateProvider', '$urlRouterProvider', '$locationProvider',
-        function ($stateProvider, $urlRouterProvider, $locationProvider) {
+    .config(['$stateProvider', '$urlRouterProvider',
+        function ($stateProvider, $urlRouterProvider) {
             'use strict';
 
-            $urlRouterProvider.otherwise('/home');
+            $urlRouterProvider.otherwise('/');
 
             $stateProvider
                 .state('home', {
@@ -11,10 +11,5 @@ angular.module('app')
                     templateUrl: '/view/home/index.html',
                     controller: 'HomeController'
                 });
-
-            $locationProvider.html5Mode({
-                enabled: true,
-                requireBase: false
-            });
         }
     ]);
