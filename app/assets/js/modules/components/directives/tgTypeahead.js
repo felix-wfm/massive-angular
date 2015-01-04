@@ -40,7 +40,7 @@
                 '   <div class="tg-typeahead__input-wrap"' +
                 '        data-ng-show="$isVisibleInput()">' +
                 '       <input type="text" class="tg-typeahead__input"' +
-                '              placeholder="{{ tgTypeaheadPlaceholder || \'\' }}"' +
+                '              placeholder="{{ $getPlaceholder() }}"' +
                 '              data-ng-model="$term"' +
                 '              data-ng-disabled="$stateHolder.disabled">' +
                 '   </div>' +
@@ -48,12 +48,12 @@
                 '   <div class="tg-typeahead__suggestions-wrap"' +
                 '        data-tg-typeahead-render-template="$templates.popup.container"' +
                 '        data-tg-typeahead-render-template-to-body="$templates.popup.appendToBody"' +
-                '        data-tg-typeahead-render-template-callback="$onTemplateRender($element, \'popup\');"></div>' +
+                '        data-tg-typeahead-render-template-callback="$onTemplateRender([$element], \'popup\');"></div>' +
                 '   <div class="tg-typeahead__suggestions-wrap"' +
                 '        data-ng-if="$stateHolder.hasSuggestions"' +
                 '        data-tg-typeahead-render-template="$templates.suggestedPopup.container"' +
                 '        data-tg-typeahead-render-template-to-body="$templates.suggestedPopup.appendToBody"' +
-                '        data-tg-typeahead-render-template-callback="$onTemplateRender($element, \'suggestedPopup\');"></div>' +
+                '        data-tg-typeahead-render-template-callback="$onTemplateRender([$element], \'suggestedPopup\');"></div>' +
                 '</div>');
 
             $templateCache.put('tg-typeahead-loader.tpl.html',
@@ -200,6 +200,7 @@
 
                         var $getModelValue = $parse(tAttrs.ngModel),
                             $setModelValue = $getModelValue.assign,
+
                             MatchModel = $injector.get('tgTypeaheadMatchModel'),
                             SuggestedMatchModel = $injector.get('tgTypeaheadSuggestedMatchModel');
 
@@ -335,6 +336,10 @@
 
                             scope.$isVisibleInput = function () {
                                 return true;
+                            };
+
+                            scope.$getPlaceholder = function () {
+                                return scope.tgTypeaheadPlaceholder || '';
                             };
 
                             scope.$updateInputElement = function () {
@@ -808,7 +813,6 @@
 
                                             if (dataSetSource) {
                                                 var min = Math.min(dataSetSource.limit, dataSetSource.matches.length);
-
                                                 scope.$setActiveMatch(prevDataSet, min - 1);
                                             }
                                         } else {
@@ -1083,7 +1087,7 @@
                                             element.detach().appendTo('body');
                                         }
 
-                                        renderCallback(scope, {$element: [element]});
+                                        renderCallback(scope, {$element: element});
                                     });
                             } else if (angular.isObject(tpl)) {
                                 tpl.$attachTo(element, scope);
@@ -1092,7 +1096,7 @@
                                     element.detach().appendTo('body');
                                 }
 
-                                renderCallback(scope, {$element: [element]});
+                                renderCallback(scope, {$element: element});
                             } else {
                                 element.remove();
                             }
@@ -1157,13 +1161,25 @@
                                                 var model = scope.$getModel(),
                                                     src = model;
 
+                                                var matchLocals = {},
+                                                    matchModel = {},
+                                                    itemName = tag.dataSet.queried.source.itemName,
+                                                    viewMapper = tag.dataSet.queried.source.viewMapper,
+                                                    modelMapper = tag.dataSet.queried.source.modelMapper;
+
+                                                matchLocals[itemName] = tag.match.data;
+                                                viewMapper.assign(matchModel, viewMapper(parentScope, matchLocals));
+                                                modelMapper.assign(matchModel, modelMapper(parentScope, matchLocals));
+
+                                                tag.item = matchModel[itemName];
+
                                                 if (src) {
                                                     if (scope.$dataSets.length > 1) {
                                                         src = src[tag.dataSet.name];
                                                     }
 
                                                     if (src.indexOf(tag.match.data) === -1) {
-                                                        src.push(tag.match.data);
+                                                        src.push(tag.item || tag.match.data);
                                                     }
                                                 }
                                             }
@@ -1202,7 +1218,14 @@
                                                 }
 
                                                 if (src) {
-                                                    var mIdx = src.indexOf(tag.match.data);
+                                                    var mIdx = -1;
+                                                    for (var i = 0, ln = src.length; i < ln; i++) {
+                                                        if (angular.equals(src[i], tag.item)) {
+                                                            mIdx = i;
+                                                            break;
+                                                        }
+                                                    }
+                                                    //var mIdx = src.indexOf(tag.item);
 
                                                     if (mIdx !== -1) {
                                                         src.splice(mIdx, 1);
@@ -1221,7 +1244,7 @@
 
                             scope.findTag = function (match) {
                                 for (var i = 0, n = scope.$tags.length; i < n; i++) {
-                                    if (scope.$tags[i].match.data === match.data) {
+                                    if (scope.$tags[i].match.model === match.model) {
                                         return scope.$tags[i];
                                     }
                                 }
@@ -1272,6 +1295,14 @@
                                 scope.$clearTypeahead();
 
                                 this.$baseFn();
+                            });
+
+                            tgTypeaheadCtrl.$overrideFn('$getPlaceholder', function () {
+                                if (scope.$tags.length > 0) {
+                                    return '';
+                                }
+
+                                return this.$baseFn();
                             });
 
                             tgTypeaheadCtrl.$overrideFn('$isVisibleInput', function () {

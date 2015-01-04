@@ -44,6 +44,7 @@ var paths = {
 			'./bower_components/font-awesome/css/font-awesome.css',
 			'./bower_components/bootstrap/dist/css/bootstrap.css',
 			'./bower_components/angular/angular-csp.css',
+			'./bower_components/highlightjs/styles/github.css'
 		],
 		fonts: [
 			'./bower_components/font-awesome/fonts/*',
@@ -54,7 +55,9 @@ var paths = {
 			'./bower_components/jquery/dist/jquery.js',
 			'./bower_components/bootstrap/dist/js/bootstrap.js',
 			'./bower_components/angular/angular.js',
-			'./bower_components/angular-ui-router/release/angular-ui-router.js'
+			'./bower_components/angular-ui-router/release/angular-ui-router.js',
+			'./bower_components/highlightjs/highlight.pack.js',
+			'./bower_components/angular-highlightjs/angular-highlightjs.js'
 		]
 	}
 };

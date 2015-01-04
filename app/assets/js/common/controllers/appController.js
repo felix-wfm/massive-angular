@@ -1,10 +1,14 @@
-angular.module('app')
-	.controller('AppController', ['$scope',
-		function ($scope) {
-			'use strict';
+(function () {
+    'use strict';
 
-			(function init() {
+    angular.module('tg.common')
+        .controller('AppController', AppController);
 
-			})();
-		}
-	]);
+    AppController.$inject = ['$scope'];
+
+    function AppController($scope) {
+        (function init() {
+
+        })();
+    }
+})();

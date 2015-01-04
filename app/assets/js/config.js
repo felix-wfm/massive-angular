@@ -1,8 +1,8 @@
 angular.module('app')
-	.config(['$logProvider',
-		function ($logProvider) {
-			'use strict';
+    .config(['$logProvider',
+        function ($logProvider) {
+            'use strict';
 
-			$logProvider.debugEnabled(true);
-		}
-	]);
+            $logProvider.debugEnabled(true);
+        }
+    ]);
