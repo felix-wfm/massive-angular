@@ -1,1 +1,23 @@
-<div tg-typeahead tg-typeahead-placeholder="Search..." ng-model="__typeahead.model1"><div tg-typeahead-data-set="result as result.name for result in getResultsAsync($viewValue, $context)"><div tg-typeahead-data-set-item><div class="tg-typeahead__suggestions-group-item-inner clearfix" tg-highlight-html="{{ $term }}"><div class="tg-typeahead__item-right">{{ $match.data.code }}</div><div class="tg-typeahead__item-left tg-typeahead__text-overflow nomargins">{{ $match.data.name }}</div></div></div><div tg-typeahead-data-set-footer><div class="tg-typeahead__suggestions-footer-inner" ng-if="$dataSet.data.noResults">No results for <strong>{{ $term }}</strong></div></div></div></div>
+<div tg-typeahead=""
+     tg-typeahead-placeholder="Search..."
+     ng-model="__typeahead.model1">
+    <div tg-typeahead-data-set="result as result.name for result in getResultsAsync($viewValue, $context)">
+        <div tg-typeahead-data-set-item="">
+            <div class="tg-typeahead__suggestions-group-item-inner clearfix"
+                 tg-highlight-html="{{ $term }}">
+                <div class="tg-typeahead__item-right">
+                    {{ $match.data.code }}
+                </div>
+                <div class="tg-typeahead__item-left tg-typeahead__text-overflow nomargins">
+                    {{ $match.data.name }}
+                </div>
+            </div>
+        </div>
+        <div tg-typeahead-data-set-footer="">
+            <div class="tg-typeahead__suggestions-footer-inner"
+                 ng-if="$dataSet.data.noResults">
+                No results for <strong>{{ $term }}</strong>
+            </div>
+        </div>
+    </div>
+</div>
