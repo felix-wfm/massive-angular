@@ -148,7 +148,7 @@ gulp.task('release.clean', function () {
 
 gulp.task('release.build', ['release.clean'], function() {
 	gulp.src(paths.app.templates)
-		.pipe(minifyHTML({ quotes: true }))
+		//.pipe(minifyHTML({ quotes: true, empty: true }))
 		.pipe(gulp.dest(paths.release));
 
 	gulp.src(paths.app.styles)
