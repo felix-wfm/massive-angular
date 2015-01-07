@@ -67,3 +67,75 @@
         </div>
     </div>
 </div>
+
+<p class="lead">
+    Simple typeahead with multiple sources
+</p>
+
+<div class="bs-example">
+    <div ng-include="'./view/components/partials/tgTypeahead/example2.html'"></div>
+
+    <div tg-tabset=""
+         tg-tabset-active-tab="result">
+        <div tg-tab="result"
+             tg-tab-title="RESULT">
+            <div class="bs-callout bs-callout-success">
+                <h4>MODEL</h4>
+
+                <p hljs language="js" source="toJson(__typeahead.model2)" compile="true"></p>
+            </div>
+        </div>
+        <div tg-tab="html"
+             tg-tab-title="HTML">
+            <div hljs language="xml" include="'./view/components/partials/tgTypeahead/example2.html'"></div>
+        </div>
+    </div>
+</div>
+
+<p class="lead">
+    Typeahead with tags
+</p>
+
+<div class="bs-example">
+    <div ng-include="'./view/components/partials/tgTypeahead/example3.html'"></div>
+
+    <div tg-tabset=""
+         tg-tabset-active-tab="result">
+        <div tg-tab="result"
+             tg-tab-title="RESULT">
+            <div class="bs-callout bs-callout-success">
+                <h4>MODEL</h4>
+
+                <p hljs language="js" source="toJson(__typeahead.model3)" compile="true"></p>
+            </div>
+        </div>
+        <div tg-tab="html"
+             tg-tab-title="HTML">
+            <div hljs language="xml" include="'./view/components/partials/tgTypeahead/example3.html'"></div>
+        </div>
+    </div>
+</div>
+
+<p class="lead">
+    Typeahead with tags and multiselection at once
+</p>
+
+<div class="bs-example">
+    <div ng-include="'./view/components/partials/tgTypeahead/example4.html'"></div>
+
+    <div tg-tabset=""
+         tg-tabset-active-tab="result">
+        <div tg-tab="result"
+             tg-tab-title="RESULT">
+            <div class="bs-callout bs-callout-success">
+                <h4>MODEL</h4>
+
+                <p hljs language="js" source="toJson(__typeahead.model4)" compile="true"></p>
+            </div>
+        </div>
+        <div tg-tab="html"
+             tg-tab-title="HTML">
+            <div hljs language="xml" include="'./view/components/partials/tgTypeahead/example4.html'"></div>
+        </div>
+    </div>
+</div>

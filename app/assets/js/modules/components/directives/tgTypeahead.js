@@ -77,7 +77,7 @@
                 '                    data-ng-class="{ active: $index === $dataSet.queried.activeIndex, selected: $match.selected, disabled: $match.disabled }"' +
                 '                    data-ng-mouseenter="$setActiveMatch($dataSet, $index);"' +
                 '                    data-ng-mouseleave="$dataSet.queried.activeIndex = -1;"' +
-                '                    data-ng-mousedown="!$match.disabled && $selectMatch($dataSet, $index, $match);">' +
+                '                    data-ng-mousedown="!$match.disabled && $selectMatch($dataSet, $index, $match, $event);">' +
                 '                    <div data-tg-typeahead-render-template="$dataSet.templates.item || $templates.dataSet.item"></div>' +
                 '                </li>' +
                 '            </ul>' +
@@ -90,7 +90,7 @@
                 '</ul>');
 
             $templateCache.put('tg-typeahead-dataSet-item.tpl.html',
-                '<span data-bind-html-unsafe="$match.value"></span>');
+                '<span data-ng-bind-html="$match.value | tgTrustedHtml"></span>');
 
             $templateCache.put('tg-typeahead-suggested-popup.tpl.html',
                 '<ul class="tg-typeahead__suggestions"' +
@@ -109,7 +109,7 @@
                 '                    data-ng-class="{ active: $index === $dataSet.suggested.activeIndex, selected: $match.selected, disabled: $match.disabled }"' +
                 '                    data-ng-mouseenter="$setActiveMatch($dataSet, $index);"' +
                 '                    data-ng-mouseleave="$dataSet.suggested.activeIndex = -1;"' +
-                '                    data-ng-mousedown="!$match.disabled && $selectMatch($dataSet, $index, $match);">' +
+                '                    data-ng-mousedown="!$match.disabled && $selectMatch($dataSet, $index, $match, $event);">' +
                 '                    <div data-tg-typeahead-render-template="$dataSet.templates.item || $templates.dataSet.item"></div>' +
                 '                </li>' +
                 '            </ul>' +
@@ -122,7 +122,7 @@
                 '</ul>');
 
             $templateCache.put('tg-typeahead-suggested-dataSet-item.tpl.html',
-                '<span data-bind-html-unsafe="$match.value"></span>');
+                '<span data-ng-bind-html="$match.value | tgTrustedHtml"></span>');
 
             $templateCache.put('tg-typeahead-tag-manager.tpl.html',
                 '<div class="tg-typeahead__tab-manager">' +
@@ -137,7 +137,7 @@
                 '       data-tooltip-placement="right"' +
                 '       data-tooltip-html-unsafe="delete"' +
                 '       data-ng-click="removeTag($tag)"></span>' +
-                '    <span class="tg-typeahead__tag-name" data-bind-html-unsafe="$tag.match.value"></span>' +
+                '    <span class="tg-typeahead__tag-name" data-ng-bind-html="$tag.match.value | tgTrustedHtml"></span>' +
                 '</div>');
 
             $templateCache.put('tg-typeahead-filter-manager.tpl.html',
@@ -150,7 +150,7 @@
             $templateCache.put('tg-typeahead-filter-tag.tpl.html',
                 '<div class="tg-typeahead__tag-wrap">' +
                 '    <div style="display: table-cell; vertical-align: top;" data-ng-switch="!!$filterTag.match">' +
-                '        <div class="tg-typeahead__tag-filter" data-ng-switch-when="true" data-bind-html-unsafe="$filterTag.filter.value"></div>' +
+                '        <div class="tg-typeahead__tag-filter" data-ng-switch-when="true" data-ng-bind-html="$filterTag.filter.value | tgTrustedHtml"></div>' +
                 '        <select class="tg-typeahead__tag-filter"' +
                 '                data-ng-model="$filterTag.filter"' +
                 '                data-ng-change="$onFilterTypeSelect($filterTag, $filterTag.filter);"' +
@@ -162,7 +162,7 @@
                 '             data-tooltip-placement="right"' +
                 '             data-tooltip-html-unsafe="delete"' +
                 '             data-ng-click="removeFilterTag($filterTag)"></span>' +
-                '       <span class="tg-typeahead__tag-name" data-bind-html-unsafe="$filterTag.match"></span>' +
+                '       <span class="tg-typeahead__tag-name" data-ng-bind-html="$filterTag.match | tgTrustedHtml"></span>' +
                 '    </div>' +
                 '</div>');
         }])
@@ -215,7 +215,7 @@
 
                             scope.selectedDataSet = null;
                             scope.$dataSets = [];
-                            scope.$term = '';
+                            scope.$term = null;
 
                             scope.$templates = {
                                 main: scope.tgTypeaheadTemplateUrl || 'tg-typeahead.tpl.html',
@@ -405,7 +405,7 @@
                             };
 
                             scope.$clearTypeahead = function () {
-                                scope.$term = '';
+                                scope.$term = null;
                             };
 
                             scope.$setActiveMatch = function (dataSet, index) {
@@ -419,7 +419,7 @@
                                 });
                             };
 
-                            scope.$selectMatch = function (dataSet, index, match) {
+                            scope.$selectMatch = function (dataSet, index, match, $event) {
                                 var evt = {
                                     context: scope.tgTypeaheadContext,
                                     dataSet: dataSet,
@@ -573,6 +573,82 @@
                                 }
                             };
 
+                            scope.$onKeyDown = function (evt) {
+                                var popupOpened = scope.$stateHolder.popup.opened,
+                                    suggestedPopupOpened = scope.$stateHolder.suggestedPopup.opened;
+
+                                if ((popupOpened || suggestedPopupOpened) && KEYBOARD_KEYS.indexOf(evt.which) !== -1) {
+                                    var activeDataSet = null,
+                                        prevDataSet = null,
+                                        nextDataSet = null,
+                                        dataSetSource;
+
+                                    if (!scope.selectedDataSet) {
+                                        scope.$dataSets.forEach(function (dataSet) {
+                                            dataSetSource = scope.getDataSetSource(dataSet);
+
+                                            if (dataSetSource && dataSetSource.activeIndex !== -1) {
+                                                activeDataSet = dataSet;
+                                            } else if (!activeDataSet) {
+                                                prevDataSet = dataSet;
+                                            } else if (activeDataSet && !nextDataSet) {
+                                                nextDataSet = dataSet;
+                                            }
+                                        });
+
+                                        if (!activeDataSet) {
+                                            activeDataSet = scope.$dataSets[0];
+                                        }
+                                    } else {
+                                        activeDataSet = scope.selectedDataSet;
+                                    }
+
+                                    evt.preventDefault();
+
+                                    dataSetSource = scope.getDataSetSource(activeDataSet);
+
+                                    if (evt.which === 40) { // Down Key
+                                        var min = Math.min(dataSetSource.limit, dataSetSource.matches.length);
+
+                                        if (dataSetSource.activeIndex + 1 < min) {
+                                            dataSetSource.activeIndex++;
+                                        } else if (nextDataSet) {
+                                            scope.$setActiveMatch(nextDataSet, 0);
+                                        } else {
+                                            return;
+                                        }
+
+                                        $timeout(scrollToActiveMatch);
+                                        scope.$digest();
+                                    } else if (evt.which === 38) { // Up Key
+                                        if (dataSetSource.activeIndex > 0) {
+                                            dataSetSource.activeIndex--;
+                                        } else if (prevDataSet) {
+                                            dataSetSource = scope.getDataSetSource(prevDataSet);
+
+                                            if (dataSetSource) {
+                                                var min = Math.min(dataSetSource.limit, dataSetSource.matches.length);
+                                                scope.$setActiveMatch(prevDataSet, min - 1);
+                                            }
+                                        } else {
+                                            return;
+                                        }
+
+                                        $timeout(scrollToActiveMatch);
+                                        scope.$digest();
+                                    } else if (evt.which === 13) { // Enter Key
+                                        if (activeDataSet !== null) {
+                                            scope.$selectMatch(activeDataSet, dataSetSource.activeIndex, dataSetSource.matches[dataSetSource.activeIndex]);
+                                            scope.$apply();
+                                        }
+                                    } else if (evt.which === 27) { // Esc Key
+                                        scope.$clearTypeahead();
+                                        scope.$closePopup();
+                                        scope.$digest();
+                                    }
+                                }
+                            };
+
                             scope.$trigger = selfCtrl.trigger.bind(selfCtrl);
 
                             function collectSources(searchTerm) {
@@ -671,6 +747,41 @@
                             function clearCollectedPromises() {
                                 scope.$dataHolder.collectedPromises.length = 0;
                             }
+
+                            function scrollToActiveMatch() {
+                                var popupOpened = scope.$stateHolder.popup.opened,
+                                    suggestedPopupOpened = scope.$stateHolder.suggestedPopup.opened,
+                                    popupElement;
+
+                                if (popupOpened) {
+                                    popupElement = scope.$templates.popup.element;
+                                } else if (suggestedPopupOpened) {
+                                    popupElement = scope.$templates.suggestedPopup.element;
+                                }
+
+                                if (popupElement) {
+                                    var suggestionsContainer = popupElement.find('.tg-typeahead__suggestions-container'),
+                                        _suggestionsContainer = suggestionsContainer.get(0);
+
+                                    if (_suggestionsContainer) {
+                                        if (_suggestionsContainer.clientHeight < _suggestionsContainer.scrollHeight) {
+                                            var activeItem = popupElement.find('.tg-typeahead__suggestions-group-item.active'),
+                                                _activeItem = activeItem.get(0);
+
+                                            if (_activeItem) {
+                                                var cpx = _suggestionsContainer.getBoundingClientRect(),
+                                                    cix = _activeItem.getBoundingClientRect();
+
+                                                if (cix.top < cpx.top) {
+                                                    _suggestionsContainer.scrollTop += (cix.top - cpx.top);
+                                                } else if (cix.bottom > cpx.bottom) {
+                                                    _suggestionsContainer.scrollTop += (cix.bottom - cpx.bottom);
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
                         }
 
                         function postLink(scope, element, attrs, controllers) {
@@ -731,7 +842,7 @@
 
                                         if (val.length >= minLength) {
                                             timeoutPromise = $timeout(function () {
-                                                if (scope.$term !== '') {
+                                                if (scope.$term) {
                                                     scope.$resolveSources(val);
                                                 }
                                             }, delay);
@@ -759,79 +870,7 @@
                             };
 
                             var onDocumentKeydown = function (evt) {
-                                var popupOpened = scope.$stateHolder.popup.opened,
-                                    suggestedPopupOpened = scope.$stateHolder.suggestedPopup.opened;
-
-                                if ((popupOpened || suggestedPopupOpened) && KEYBOARD_KEYS.indexOf(evt.which) !== -1) {
-                                    var activeDataSet = null,
-                                        prevDataSet = null,
-                                        nextDataSet = null,
-                                        dataSetSource;
-
-                                    if (!scope.selectedDataSet) {
-                                        scope.$dataSets.forEach(function (dataSet) {
-                                            dataSetSource = scope.getDataSetSource(dataSet);
-
-                                            if (dataSetSource && dataSetSource.activeIndex !== -1) {
-                                                activeDataSet = dataSet;
-                                            } else if (!activeDataSet) {
-                                                prevDataSet = dataSet;
-                                            } else if (activeDataSet && !nextDataSet) {
-                                                nextDataSet = dataSet;
-                                            }
-                                        });
-
-                                        if (!activeDataSet) {
-                                            activeDataSet = scope.$dataSets[0];
-                                        }
-                                    } else {
-                                        activeDataSet = scope.selectedDataSet;
-                                    }
-
-                                    evt.preventDefault();
-
-                                    dataSetSource = scope.getDataSetSource(activeDataSet);
-
-                                    if (evt.which === 40) { // Dow n Key
-                                        var min = Math.min(dataSetSource.limit, dataSetSource.matches.length);
-
-                                        if (dataSetSource.activeIndex + 1 < min) {
-                                            dataSetSource.activeIndex++;
-                                        } else if (nextDataSet) {
-                                            scope.$setActiveMatch(nextDataSet, 0);
-                                        } else {
-                                            return;
-                                        }
-
-                                        $timeout(scrollToActiveMatch);
-                                        scope.$digest();
-                                    } else if (evt.which === 38) { // Up Key
-                                        if (dataSetSource.activeIndex > 0) {
-                                            dataSetSource.activeIndex--;
-                                        } else if (prevDataSet) {
-                                            dataSetSource = scope.getDataSetSource(prevDataSet);
-
-                                            if (dataSetSource) {
-                                                var min = Math.min(dataSetSource.limit, dataSetSource.matches.length);
-                                                scope.$setActiveMatch(prevDataSet, min - 1);
-                                            }
-                                        } else {
-                                            return;
-                                        }
-
-                                        $timeout(scrollToActiveMatch);
-                                        scope.$digest();
-                                    } else if (evt.which === 13) { // Enter Key
-                                        if (activeDataSet !== null) {
-                                            scope.$selectMatch(activeDataSet, dataSetSource.activeIndex, dataSetSource.matches[dataSetSource.activeIndex]);
-                                            scope.$apply();
-                                        }
-                                    } else if (evt.which === 27) { // Esc Key
-                                        scope.$clearTypeahead();
-                                        scope.$closePopup();
-                                        scope.$digest();
-                                    }
-                                }
+                                scope.$onKeyDown(evt);
                             };
 
                             $document.on('click', onDocumentClick);
@@ -841,41 +880,6 @@
                                 $document.off('click', onDocumentClick);
                                 $document.off('keydown', onDocumentKeydown);
                             });
-
-                            function scrollToActiveMatch() {
-                                var popupOpened = scope.$stateHolder.popup.opened,
-                                    suggestedPopupOpened = scope.$stateHolder.suggestedPopup.opened,
-                                    popupElement;
-
-                                if (popupOpened) {
-                                    popupElement = scope.$templates.popup.element;
-                                } else if (suggestedPopupOpened) {
-                                    popupElement = scope.$templates.suggestedPopup.element;
-                                }
-
-                                if (popupElement) {
-                                    var suggestionsContainer = popupElement.find('.tg-typeahead__suggestions-container'),
-                                        _suggestionsContainer = suggestionsContainer.get(0);
-
-                                    if (_suggestionsContainer) {
-                                        if (_suggestionsContainer.clientHeight < _suggestionsContainer.scrollHeight) {
-                                            var activeItem = popupElement.find('.tg-typeahead__suggestions-group-item.active'),
-                                                _activeItem = activeItem.get(0);
-
-                                            if (_activeItem) {
-                                                var cpx = _suggestionsContainer.getBoundingClientRect(),
-                                                    cix = _activeItem.getBoundingClientRect();
-
-                                                if (cix.top < cpx.top) {
-                                                    _suggestionsContainer.scrollTop += (cix.top - cpx.top);
-                                                } else if (cix.bottom > cpx.bottom) {
-                                                    _suggestionsContainer.scrollTop += (cix.bottom - cpx.bottom);
-                                                }
-                                            }
-                                        }
-                                    }
-                                }
-                            }
 
                             var model = scope.$prepareModel(scope.$getModel());
 
@@ -1120,7 +1124,6 @@
                     compile: function (tElement, tAttrs) {
                         var tagManagerTpl = tAttrs.tgTypeaheadTagManagerTemplateUrl || 'tg-typeahead-tag-manager.tpl.html',
                             tagTpl = tAttrs.tgTypeaheadTagTemplateUrl || 'tg-typeahead-tag.tpl.html',
-                            multiSelection = (tAttrs.tgTypeaheadMultiSelection === 'true'),
                             maxSelectedTags = parseInt(tAttrs.tgTypeaheadMaxSelectedTags) || 0,
                             MatchModel = $injector.get('tgTypeaheadMatchModel'),
                             TagModel = $injector.get('tgTypeaheadTagModel');
@@ -1254,6 +1257,22 @@
                                 scope.$tags.length = 0;
                             };
 
+                            scope.hasAllSelected = function (dataSet) {
+                                var dataSetSource = scope.getDataSetSource(dataSet);
+
+                                if (dataSetSource.matches.length > 0) {
+                                    for (var i = 0, n = dataSetSource.matches.length; i < n; i++) {
+                                        if (!dataSetSource.matches[i].selected) {
+                                            return false;
+                                        }
+                                    }
+
+                                    return true;
+                                }
+
+                                return false;
+                            };
+
                             scope.selectAll = function (dataSet, $event) {
                                 var dataSetSource = scope.getDataSetSource(dataSet);
 
@@ -1297,6 +1316,16 @@
                                 this.$baseFn();
                             });
 
+                            tgTypeaheadCtrl.$overrideFn('$onKeyDown', function (evt) {
+                                if (evt.which === 8 && scope.$term === null) {
+                                    if (scope.$tags.length > 0) {
+                                        scope.removeTag(scope.$tags[scope.$tags.length - 1]);
+                                    }
+                                } else {
+                                    this.$baseFn(evt);
+                                }
+                            });
+
                             tgTypeaheadCtrl.$overrideFn('$getPlaceholder', function () {
                                 if (scope.$tags.length > 0) {
                                     return '';
@@ -1321,7 +1350,9 @@
                                 return result;
                             });
 
-                            tgTypeaheadCtrl.$overrideFn('$selectMatch', function (dataSet, index, match) {
+                            tgTypeaheadCtrl.$overrideFn('$selectMatch', function (dataSet, index, match, $event) {
+                                scope.$clearTypeahead();
+
                                 var evt = {
                                     context: scope.tgTypeaheadContext,
                                     dataSet: dataSet,
@@ -1331,23 +1362,19 @@
 
                                 tgTypeaheadCtrl.trigger('onMatchSelecting', evt)
                                     .then(function () {
-                                        // when multi selection mode is inactive
-                                        if (!multiSelection || scope.getDataSetSource(dataSet).matches.length === 1) {
+                                        var tag = scope.findTag(match);
+
+                                        // multi selection: select / deselect
+                                        if (tag === undefined) {
                                             var tag = new TagModel(match, dataSet);
 
                                             scope.addTag(tag);
-                                            scope.$onOutsideClick();
                                         } else {
-                                            var tag = scope.findTag(match);
+                                            scope.removeTag(tag);
+                                        }
 
-                                            // multi selection: select / deselect
-                                            if (tag === undefined) {
-                                                var tag = new TagModel(match, dataSet);
-
-                                                scope.addTag(tag);
-                                            } else {
-                                                scope.removeTag(tag);
-                                            }
+                                        if (!$event || !$event.shiftKey) {
+                                            scope.$onOutsideClick();
                                         }
                                     });
                             });

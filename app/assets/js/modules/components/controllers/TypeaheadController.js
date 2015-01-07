@@ -8,7 +8,10 @@
 
     function TypeaheadController($scope, $q, $filter, $timeout, DataService) {
         $scope.__typeahead = {
-            model1: null
+            model1: null,
+            model2: null,
+            model3: [],
+            model4: []
         };
 
         $scope.control = {
