@@ -19,7 +19,7 @@
                 return matchItem;
             };
         }])
-        .directive('tgHighlightHtml', ['$timeout', function ($timeout) {
+        .directive('tgHighlightHtml', ['$timeout', '$compile', function ($timeout, $compile) {
             return {
                 restrict: 'A',
                 scope: false,
@@ -33,7 +33,7 @@
 
                                 $timeout(function () {
                                     element.html(function (index, html) {
-                                        return html.replace(rx, '<strong>$&</strong>');
+                                        return $compile(html.replace(rx, '<strong>$&</strong>'))(scope);
                                     });
                                 });
                             }

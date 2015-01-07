@@ -36,133 +36,138 @@
         .run(['$templateCache', function ($templateCache) {
             $templateCache.put('tg-typeahead.tpl.html',
                 '<div class="tg-typeahead"' +
-                '     data-ng-class="tgTypeaheadWrapClass">' +
-                '   <div class="tg-typeahead__input-wrap"' +
-                '        data-ng-show="$isVisibleInput()">' +
-                '       <input type="text" class="tg-typeahead__input"' +
+                '     ng-class="tgTypeaheadWrapClass">' +
+                '   <div class="tg-typeahead__input-container"' +
+                '        ng-show="$isVisibleInput()">' +
+                '       <a href="" class="tg-typeahead__clear-link"' +
+                '          ng-show="$isVisibleClear()"' +
+                '          ng-click="$clear($event);">Delete All</a>' +
+                '       <div class="tg-typeahead__input-wrap">' +
+                '           <input type="text" class="tg-typeahead__input"' +
                 '              placeholder="{{ $getPlaceholder() }}"' +
-                '              data-ng-model="$term"' +
-                '              data-ng-disabled="$stateHolder.disabled">' +
+                '              ng-model="$term"' +
+                '              ng-disabled="$stateHolder.disabled">' +
+                '       </div>' +
                 '   </div>' +
-                '   <div data-tg-typeahead-render-template="$templates.loader"></div>' +
+                '   <div tg-typeahead-render-template="$templates.loader"></div>' +
                 '   <div class="tg-typeahead__suggestions-wrap"' +
-                '        data-tg-typeahead-render-template="$templates.popup.container"' +
-                '        data-tg-typeahead-render-template-to-body="$templates.popup.appendToBody"' +
-                '        data-tg-typeahead-render-template-callback="$onTemplateRender([$element], \'popup\');"></div>' +
+                '        tg-typeahead-render-template="$templates.popup.container"' +
+                '        tg-typeahead-render-template-to-body="$templates.popup.appendToBody"' +
+                '        tg-typeahead-render-template-callback="$onTemplateRender([$element], \'popup\');"></div>' +
                 '   <div class="tg-typeahead__suggestions-wrap"' +
-                '        data-ng-if="$stateHolder.hasSuggestions"' +
-                '        data-tg-typeahead-render-template="$templates.suggestedPopup.container"' +
-                '        data-tg-typeahead-render-template-to-body="$templates.suggestedPopup.appendToBody"' +
-                '        data-tg-typeahead-render-template-callback="$onTemplateRender([$element], \'suggestedPopup\');"></div>' +
+                '        ng-if="$stateHolder.hasSuggestions"' +
+                '        tg-typeahead-render-template="$templates.suggestedPopup.container"' +
+                '        tg-typeahead-render-template-to-body="$templates.suggestedPopup.appendToBody"' +
+                '        tg-typeahead-render-template-callback="$onTemplateRender([$element], \'suggestedPopup\');"></div>' +
                 '</div>');
 
             $templateCache.put('tg-typeahead-loader.tpl.html',
                 '<div class="input-loader tg-typeahead__loader"' +
-                '     data-ng-show="$stateHolder.loader"></div>');
+                '     ng-show="$stateHolder.loader"></div>');
 
             $templateCache.put('tg-typeahead-popup.tpl.html',
                 '<ul class="tg-typeahead__suggestions"' +
-                '    data-ng-if="$stateHolder.popup.opened"' +
-                '    data-ng-style="$templates.popup.style">' +
+                '    ng-if="$stateHolder.popup.opened"' +
+                '    ng-style="$templates.popup.style">' +
                 '    <li class="tg-typeahead__suggestions-header"' +
-                '        data-tg-typeahead-render-template="$templates.popup.header"></li>' +
+                '        tg-typeahead-render-template="$templates.popup.header"></li>' +
                 '    <li class="tg-typeahead__suggestions-container"' +
-                '        data-tg-when-scrolled="$onPopupScrolled($event);">' +
-                '        <div data-ng-repeat="$dataSet in $dataSets | filter:{ queried: { active: true } }">' +
+                '        tg-when-scrolled="$onPopupScrolled($event);">' +
+                '        <div ng-repeat="$dataSet in $dataSets | filter:{ queried: { active: true } }">' +
                 '            <div class="tg-typeahead__suggestions-group-header"' +
-                '                 data-tg-typeahead-render-template="$dataSet.templates.header || $templates.dataSet.header"></div>' +
+                '                 tg-typeahead-render-template="$dataSet.templates.header || $templates.dataSet.header"></div>' +
                 '            <ul class="tg-typeahead__suggestions-group">' +
                 '                <li class="tg-typeahead__suggestions-group-item"' +
-                '                    data-ng-repeat="$match in $dataSet.queried.matches | limitTo:$dataSet.queried.limit"' +
-                '                    data-ng-class="{ active: $index === $dataSet.queried.activeIndex, selected: $match.selected, disabled: $match.disabled }"' +
-                '                    data-ng-mouseenter="$setActiveMatch($dataSet, $index);"' +
-                '                    data-ng-mouseleave="$dataSet.queried.activeIndex = -1;"' +
-                '                    data-ng-mousedown="!$match.disabled && $selectMatch($dataSet, $index, $match, $event);">' +
-                '                    <div data-tg-typeahead-render-template="$dataSet.templates.item || $templates.dataSet.item"></div>' +
+                '                    ng-repeat="$match in $dataSet.queried.matches | limitTo:$dataSet.queried.limit"' +
+                '                    ng-class="{ active: $index === $dataSet.queried.activeIndex, selected: $match.selected, disabled: $match.disabled }"' +
+                '                    ng-mouseenter="$setActiveMatch($dataSet, $index);"' +
+                '                    ng-mouseleave="$dataSet.queried.activeIndex = -1;"' +
+                '                    ng-mousedown="!$match.disabled && $selectMatch($dataSet, $index, $match, $event);">' +
+                '                    <div tg-typeahead-render-template="$dataSet.templates.item || $templates.dataSet.item"></div>' +
                 '                </li>' +
                 '            </ul>' +
                 '            <div class="tg-typeahead__suggestions-group-footer"' +
-                '                data-tg-typeahead-render-template="$dataSet.templates.footer || $templates.dataSet.footer"></div>' +
+                '                tg-typeahead-render-template="$dataSet.templates.footer || $templates.dataSet.footer"></div>' +
                 '        </div>' +
                 '    </li>' +
                 '    <li class="tg-typeahead__suggestions-footer"' +
-                '        data-tg-typeahead-render-template="$templates.popup.footer"></li>' +
+                '        tg-typeahead-render-template="$templates.popup.footer"></li>' +
                 '</ul>');
 
             $templateCache.put('tg-typeahead-dataSet-item.tpl.html',
-                '<span data-ng-bind-html="$match.value | tgTrustedHtml"></span>');
+                '<span ng-bind-html="$match.value | tgTrustedHtml"></span>');
 
             $templateCache.put('tg-typeahead-suggested-popup.tpl.html',
                 '<ul class="tg-typeahead__suggestions"' +
-                '    data-ng-if="$stateHolder.suggestedPopup.opened"' +
-                '    data-ng-style="$templates.suggestedPopup.style">' +
+                '    ng-if="$stateHolder.suggestedPopup.opened"' +
+                '    ng-style="$templates.suggestedPopup.style">' +
                 '    <li class="tg-typeahead__suggestions-header"' +
-                '        data-tg-typeahead-render-template="$templates.suggestedPopup.header"></li>' +
+                '        tg-typeahead-render-template="$templates.suggestedPopup.header"></li>' +
                 '    <li class="tg-typeahead__suggestions-container"' +
-                '        data-tg-when-scrolled="$onPopupScrolled($event);">' +
-                '        <div data-ng-repeat="$dataSet in $dataSets | filter:{ suggested: { active: true } }">' +
+                '        tg-when-scrolled="$onPopupScrolled($event);">' +
+                '        <div ng-repeat="$dataSet in $dataSets | filter:{ suggested: { active: true } }">' +
                 '            <div class="tg-typeahead__suggestions-group-header"' +
-                '                 data-tg-typeahead-render-template="$dataSet.templates.header || $templates.dataSet.header"></div>' +
+                '                 tg-typeahead-render-template="$dataSet.templates.header || $templates.dataSet.header"></div>' +
                 '            <ul class="tg-typeahead__suggestions-group">' +
                 '                <li class="tg-typeahead__suggestions-group-item"' +
-                '                    data-ng-repeat="$match in $dataSet.suggested.matches | limitTo:$dataSet.suggested.limit"' +
-                '                    data-ng-class="{ active: $index === $dataSet.suggested.activeIndex, selected: $match.selected, disabled: $match.disabled }"' +
-                '                    data-ng-mouseenter="$setActiveMatch($dataSet, $index);"' +
-                '                    data-ng-mouseleave="$dataSet.suggested.activeIndex = -1;"' +
-                '                    data-ng-mousedown="!$match.disabled && $selectMatch($dataSet, $index, $match, $event);">' +
-                '                    <div data-tg-typeahead-render-template="$dataSet.templates.item || $templates.dataSet.item"></div>' +
+                '                    ng-repeat="$match in $dataSet.suggested.matches | limitTo:$dataSet.suggested.limit"' +
+                '                    ng-class="{ active: $index === $dataSet.suggested.activeIndex, selected: $match.selected, disabled: $match.disabled }"' +
+                '                    ng-mouseenter="$setActiveMatch($dataSet, $index);"' +
+                '                    ng-mouseleave="$dataSet.suggested.activeIndex = -1;"' +
+                '                    ng-mousedown="!$match.disabled && $selectMatch($dataSet, $index, $match, $event);">' +
+                '                    <div tg-typeahead-render-template="$dataSet.templates.item || $templates.dataSet.item"></div>' +
                 '                </li>' +
                 '            </ul>' +
                 '            <div class="tg-typeahead__suggestions-group-footer"' +
-                '                data-tg-typeahead-render-template="$dataSet.templates.footer || $templates.dataSet.footer"></div>' +
+                '                tg-typeahead-render-template="$dataSet.templates.footer || $templates.dataSet.footer"></div>' +
                 '        </div>' +
                 '    </li>' +
                 '    <li class="tg-typeahead__suggestions-footer"' +
-                '        data-tg-typeahead-render-template="$templates.suggestedPopup.footer"></li>' +
+                '        tg-typeahead-render-template="$templates.suggestedPopup.footer"></li>' +
                 '</ul>');
 
             $templateCache.put('tg-typeahead-suggested-dataSet-item.tpl.html',
-                '<span data-ng-bind-html="$match.value | tgTrustedHtml"></span>');
+                '<span ng-bind-html="$match.value | tgTrustedHtml"></span>');
 
             $templateCache.put('tg-typeahead-tag-manager.tpl.html',
                 '<div class="tg-typeahead__tab-manager">' +
-                '   <div data-ng-repeat="$tag in $tags">' +
-                '       <div data-tg-typeahead-render-template="$templates.tag"></div>' +
+                '   <div ng-repeat="$tag in $tags">' +
+                '       <div tg-typeahead-render-template="$templates.tag"></div>' +
                 '   </div>' +
                 '</div>');
 
             $templateCache.put('tg-typeahead-tag.tpl.html',
                 '<div class="tg-typeahead__tag">' +
                 '    <span class="tg-typeahead__tag-remove fa fa-times" rel="tooltip"' +
-                '       data-tooltip-placement="right"' +
-                '       data-tooltip-html-unsafe="delete"' +
-                '       data-ng-click="removeTag($tag)"></span>' +
-                '    <span class="tg-typeahead__tag-name" data-ng-bind-html="$tag.match.value | tgTrustedHtml"></span>' +
+                '       tooltip-placement="right"' +
+                '       tooltip-html-unsafe="delete"' +
+                '       ng-click="removeTag($tag)"></span>' +
+                '    <span class="tg-typeahead__tag-name" ng-bind-html="$tag.match.value | tgTrustedHtml"></span>' +
                 '</div>');
 
             $templateCache.put('tg-typeahead-filter-manager.tpl.html',
                 '<div class="tg-typeahead__tab-manager">' +
-                '   <div data-ng-repeat="$filterTag in $filters.tags">' +
-                '       <div data-tg-typeahead-render-template="$templates.filterTag"></div>' +
+                '   <div ng-repeat="$filterTag in $filters.tags">' +
+                '       <div tg-typeahead-render-template="$templates.filterTag"></div>' +
                 '   </div>' +
                 '</div>');
 
             $templateCache.put('tg-typeahead-filter-tag.tpl.html',
                 '<div class="tg-typeahead__tag-wrap">' +
-                '    <div style="display: table-cell; vertical-align: top;" data-ng-switch="!!$filterTag.match">' +
-                '        <div class="tg-typeahead__tag-filter" data-ng-switch-when="true" data-ng-bind-html="$filterTag.filter.value | tgTrustedHtml"></div>' +
+                '    <div style="display: table-cell; vertical-align: top;" ng-switch="!!$filterTag.match">' +
+                '        <div class="tg-typeahead__tag-filter" ng-switch-when="true" ng-bind-html="$filterTag.filter.value | tgTrustedHtml"></div>' +
                 '        <select class="tg-typeahead__tag-filter"' +
-                '                data-ng-model="$filterTag.filter"' +
-                '                data-ng-change="$onFilterTypeSelect($filterTag, $filterTag.filter);"' +
-                '                data-ng-options="filter.value for filter in $filterTag.filters track by filter.type"' +
-                '                data-ng-switch-default=""></select>' +
+                '                ng-model="$filterTag.filter"' +
+                '                ng-change="$onFilterTypeSelect($filterTag, $filterTag.filter);"' +
+                '                ng-options="filter.value for filter in $filterTag.filters track by filter.type"' +
+                '                ng-switch-default=""></select>' +
                 '    </div>' +
-                '    <div class="tg-typeahead__tag" style="display: table-cell; vertical-align: top;" data-ng-show="$filterTag.match !== null">' +
+                '    <div class="tg-typeahead__tag" style="display: table-cell; vertical-align: top;" ng-show="$filterTag.match !== null">' +
                 '       <span class="tg-typeahead__tag-remove fa fa-times" rel="tooltip"' +
-                '             data-tooltip-placement="right"' +
-                '             data-tooltip-html-unsafe="delete"' +
-                '             data-ng-click="removeFilterTag($filterTag)"></span>' +
-                '       <span class="tg-typeahead__tag-name" data-ng-bind-html="$filterTag.match | tgTrustedHtml"></span>' +
+                '             tooltip-placement="right"' +
+                '             tooltip-html-unsafe="delete"' +
+                '             ng-click="removeFilterTag($filterTag)"></span>' +
+                '       <span class="tg-typeahead__tag-name" ng-bind-html="$filterTag.match | tgTrustedHtml"></span>' +
                 '    </div>' +
                 '</div>');
         }])
@@ -190,6 +195,7 @@
                         tgTypeaheadPopupAppendToBody: '@',
                         tgTypeaheadPopupStrictWidth: '@',
                         tgTypeaheadWrapClass: '@',
+                        tgTypeaheadDisplayClean: '@',
                         tgTypeaheadMinLength: '=?',
                         tgTypeaheadDelay: '=?',
                         tgTypeaheadSelected: '@'
@@ -340,6 +346,14 @@
 
                             scope.$getPlaceholder = function () {
                                 return scope.tgTypeaheadPlaceholder || '';
+                            };
+
+                            scope.$isVisibleClear = function () {
+                                return (scope.tgTypeaheadDisplayClean === 'true' && scope.$term);
+                            };
+
+                            scope.$clear = function ($event) {
+                                scope.$clearTypeahead();
                             };
 
                             scope.$updateInputElement = function () {
@@ -786,7 +800,6 @@
 
                         function postLink(scope, element, attrs, controllers) {
                             var selfCtrl = controllers[0],
-                                parentScope = scope.$parent,
                                 minLength = scope.tgTypeaheadMinLength || 0,
                                 delay = scope.tgTypeaheadDelay || 500,
                                 timeoutPromise = null,
@@ -1077,7 +1090,7 @@
                             renderCallback = $parse(tAttrs.tgTypeaheadRenderTemplateCallback);
 
                         function postLink(scope, element, attrs) {
-                            element.html(null);
+                            element.empty();
 
                             var tpl = renderTpl(scope),
                                 toBody = renderToBody(scope) === true;
@@ -1350,6 +1363,14 @@
                                 return result;
                             });
 
+                            tgTypeaheadCtrl.$overrideFn('$isVisibleClear', function (evt) {
+                                return (attrs.tgTypeaheadDisplayClean === 'true' && scope.$tags.length > 1);
+                            });
+
+                            tgTypeaheadCtrl.$overrideFn('$clear', function (evt) {
+                                scope.clearTags();
+                            });
+
                             tgTypeaheadCtrl.$overrideFn('$selectMatch', function (dataSet, index, match, $event) {
                                 scope.$clearTypeahead();
 
@@ -1359,7 +1380,8 @@
                                     index: index,
                                     match: match
                                 };
-
+                                console.log(match)
+                                match.value = 'abc'
                                 tgTypeaheadCtrl.trigger('onMatchSelecting', evt)
                                     .then(function () {
                                         var tag = scope.findTag(match);
@@ -1373,8 +1395,8 @@
                                             scope.removeTag(tag);
                                         }
 
-                                        if (!$event || !$event.shiftKey) {
-                                            scope.$onOutsideClick();
+                                        if (!$event || !$event.ctrlKey) {
+                                            //scope.$onOutsideClick();
                                         }
                                     });
                             });
@@ -1472,11 +1494,12 @@
                                             });
 
                                         return bottomRowWidth;
-                                    }());
+                                    }()),
+                                    linkWidth = typeaheadElement.find('.tg-typeahead__clear-link').width() || 0;
 
                                 if (listWidth > 0) {
                                     var diff = maxWidth - listWidth,
-                                        queryInputWidth = (diff < 100) ? maxWidth : diff;
+                                        queryInputWidth = (diff < (100 + linkWidth)) ? maxWidth : diff;
 
                                     if (queryInputWidth >= 9) {
                                         queryInputWidth -= 9;
@@ -1495,7 +1518,7 @@
                                 $http.get(scope.$templates.tagManager, {cache: $templateCache})
                                     .success(function (tplContent) {
                                         typeaheadElement = evt.element.find('.tg-typeahead');
-                                        inputWrapElement = evt.element.find('.tg-typeahead__input-wrap');
+                                        inputWrapElement = evt.element.find('.tg-typeahead__input-container');
 
                                         typeaheadElement.prepend($compile(tplContent.trim())(scope));
                                     });
@@ -1731,7 +1754,7 @@
 
                             tgTypeaheadCtrl.$overrideFn('$updateInputElement', function () {
                                 var typeaheadElement = element.find('.tg-typeahead');
-                                var inputWrapElement = element.find('.tg-typeahead__input-wrap');
+                                var inputWrapElement = element.find('.tg-typeahead__input-container');
 
                                 var maxWidth = typeaheadElement.width(),
                                     listWidth = (function () {

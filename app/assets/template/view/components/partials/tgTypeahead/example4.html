@@ -1,28 +1,20 @@
 <div tg-typeahead=""
      tg-typeahead-placeholder="Search..."
+     tg-typeahead-display-clean="true"
+     tg-typeahead-data-set-displayed-items="5"
      tg-typeahead-tag-manager=""
      ng-model="__typeahead.model4">
-    <div tg-typeahead-data-set="result as result.name for result in getResultsAsync($viewValue, $context)">
-        <div tg-typeahead-data-set-header="">
-            <div class="tg-typeahead__suggestions-header-inner"
-                 ng-if="!$dataSet.data.noResults">
-                <span ng-switch="hasAllSelected($dataSet)">
-                    <span ng-switch-when="false">
-                        <a href=""
-                           ng-click="selectAll($dataSet, $event);">
-                            <strong>Select All</strong>
-                        </a>
-                    </span>
-                    <span ng-switch-when="true">
-                        <a href=""
-                           ng-click="deselectAll($dataSet, $event);">
-                            <strong>Deselect All</strong>
-                        </a>
-                    </span>
-                </span>
-
-            </div>
+    <div tg-typeahead-popup-header="">
+        <div class="tg-typeahead__suggestions-header-inner"
+             ng-if="!$dataSets[0].data.noResults">
+            <a href=""
+               ng-click="!hasAllSelected($dataSets[0]) ? selectAll($dataSets[0], $event) : deselectAll($dataSets[0], $event);">
+                <i class="fa fa-check" ng-show="hasAllSelected($dataSets[0])"></i>
+                <strong>Select All</strong>
+            </a>
         </div>
+    </div>
+    <div tg-typeahead-data-set="result as result.name for result in getResultsAsync($viewValue, $context)">
         <div tg-typeahead-data-set-item="">
             <div class="tg-typeahead__suggestions-group-item-inner clearfix"
                  tg-highlight-html="{{ $term }}">
@@ -30,6 +22,7 @@
                     {{ $match.data.code }}
                 </div>
                 <div class="tg-typeahead__item-left tg-typeahead__text-overflow nomargins">
+                    <i class="fa fa-check" ng-show="$match.selected"></i>
                     {{ $match.data.name }}
                 </div>
             </div>
