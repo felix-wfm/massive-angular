@@ -1380,8 +1380,7 @@
                                     index: index,
                                     match: match
                                 };
-                                console.log(match)
-                                match.value = 'abc'
+
                                 tgTypeaheadCtrl.trigger('onMatchSelecting', evt)
                                     .then(function () {
                                         var tag = scope.findTag(match);
@@ -1396,7 +1395,7 @@
                                         }
 
                                         if (!$event || !$event.ctrlKey) {
-                                            //scope.$onOutsideClick();
+                                            scope.$onOutsideClick();
                                         }
                                     });
                             });
