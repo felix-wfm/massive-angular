@@ -1,0 +1,86 @@
+<div tg-typeahead=""
+     tg-typeahead-placeholder="Search..."
+     ng-model="__typeahead.model2">
+    <div tg-typeahead-data-set="result as result.name for result in getResultsAsync($viewValue, $context)"
+         tg-typeahead-data-set-name="countryA"
+         tg-typeahead-data-set-displayed-items="4"
+         tg-typeahead-data-set-limit-step="25">
+        <div tg-typeahead-data-set-header="">
+            <div class="tg-typeahead__suggestions-header-inner"
+                 ng-if="!$dataSet.data.noResults">
+                <span ng-switch="!selectedDataSet">
+                    <span ng-switch-when="true">
+                        <a href=""
+                           ng-click="selectDataSet($dataSet, $event);">
+                            <strong>Country A</strong>
+                        </a>
+                    </span>
+                    <span ng-switch-when="false">
+                        <a href=""
+                           ng-click="selectDataSet(null, $event);">
+                            << Back
+                        </a>
+                    </span>
+                </span>
+            </div>
+        </div>
+        <div tg-typeahead-data-set-item="">
+            <div class="tg-typeahead__suggestions-group-item-inner clearfix"
+                 tg-highlight-html="{{ $term }}">
+                <div class="tg-typeahead__item-right">
+                    {{ $match.data.code }}
+                </div>
+                <div class="tg-typeahead__item-left tg-typeahead__text-overflow nomargins">
+                    {{ $match.data.name }}
+                </div>
+            </div>
+        </div>
+        <div tg-typeahead-data-set-footer="">
+            <div class="tg-typeahead__suggestions-footer-inner"
+                 ng-if="$dataSet.data.noResults">
+                No results for <strong>{{ $term }}</strong>
+            </div>
+        </div>
+    </div>
+    <div tg-typeahead-data-set="result as result.name for result in getResultsAsync($viewValue, $context)"
+         tg-typeahead-data-set-name="countryB"
+         tg-typeahead-data-set-displayed-items="4"
+         tg-typeahead-data-set-limit-step="25">
+        <div tg-typeahead-data-set-header="">
+            <div class="tg-typeahead__suggestions-header-inner"
+                 ng-if="!$dataSet.data.noResults">
+                <span ng-switch="!selectedDataSet">
+                    <span ng-switch-when="true">
+                        <a href=""
+                           ng-click="selectDataSet($dataSet, $event);">
+                            <strong>Country B</strong>
+                        </a>
+                    </span>
+                    <span ng-switch-when="false">
+                        <a href=""
+                           ng-click="selectDataSet(null, $event);">
+                            << Back
+                        </a>
+                    </span>
+                </span>
+            </div>
+        </div>
+        <div tg-typeahead-data-set-item="">
+            <div class="tg-typeahead__suggestions-group-item-inner clearfix"
+                 tg-highlight-html="{{ $term }}">
+                <div class="tg-typeahead__item-right">
+                    {{ $match.data.code }}
+                </div>
+                <div class="tg-typeahead__item-left tg-typeahead__text-overflow nomargins">
+                    {{ $match.data.name }}
+                </div>
+            </div>
+        </div>
+        <div tg-typeahead-data-set-footer="">
+            <div class="tg-typeahead__suggestions-footer-inner"
+                 ng-if="$dataSet.data.noResults">
+                No results for <strong>{{ $term }}</strong>
+            </div>
+        </div>
+    </div>
+</div>
