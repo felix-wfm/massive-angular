@@ -9,7 +9,7 @@
              ng-if="!$dataSets[0].data.noResults">
             <a href=""
                ng-click="!hasAllSelected($dataSets[0]) ? selectAll($dataSets[0], $event) : deselectAll($dataSets[0], $event);">
-                <i class="fa fa-check" ng-show="hasAllSelected($dataSets[0])"></i>
+				<i class="fa" style="width: 14px;" ng-class="{ 'fa-check': hasAllSelected($dataSets[0]) }"></i>
                 <strong>Select All</strong>
             </a>
         </div>
