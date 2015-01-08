@@ -40,7 +40,7 @@
                 '   <div class="tg-typeahead__input-container"' +
                 '        ng-show="$isVisibleInput()">' +
                 '       <a href="" class="tg-typeahead__clear-link"' +
-                '          ng-show="$isVisibleClear()"' +
+                '          ng-show="!$stateHolder.loader && $isVisibleClear()"' +
                 '          ng-click="$clear($event);">Delete All</a>' +
                 '       <div class="tg-typeahead__input-wrap">' +
                 '           <input type="text" class="tg-typeahead__input"' +
@@ -141,7 +141,7 @@
                 '    <span class="tg-typeahead__tag-remove fa fa-times" rel="tooltip"' +
                 '       tooltip-placement="right"' +
                 '       tooltip-html-unsafe="delete"' +
-                '       ng-click="removeTag($tag)"></span>' +
+                '       ng-click="$removeTag($tag)"></span>' +
                 '    <span class="tg-typeahead__tag-name" ng-bind-html="$tag.match.value | tgTrustedHtml"></span>' +
                 '</div>');
 
@@ -354,6 +354,7 @@
 
                             scope.$clear = function ($event) {
                                 scope.$clearTypeahead();
+                                scope.$onOutsideClick();
                             };
 
                             scope.$updateInputElement = function () {
@@ -454,8 +455,8 @@
                                 scope.$closePopup();
                             };
 
-                            scope.$selectUnknownMatch = function (dataSet, match) {
-                                scope.$selectMatch(dataSet, -1, match);
+                            scope.$selectUnknownMatch = function (dataSet, match, $event) {
+                                scope.$selectMatch(dataSet, -1, match, $event);
                             };
 
                             scope.$applyMatch = function (dataSet, model) {
@@ -527,6 +528,10 @@
                                 return model;
                             };
 
+                            scope.$prepareMatchModel = function (matchModel, dataSet) {
+
+                            };
+
                             scope.$getModel = function () {
                                 if ($getModelValue) {
                                     return $getModelValue(parentScope);
@@ -560,7 +565,7 @@
                                 }
                             };
 
-                            scope.$onPopupScrolled = function () {
+                            scope.$onPopupScrolled = function ($event) {
                                 if (scope.selectedDataSet) {
                                     var dataSetSource = scope.getDataSetSource(scope.selectedDataSet);
 
@@ -652,7 +657,7 @@
                                         scope.$digest();
                                     } else if (evt.which === 13) { // Enter Key
                                         if (activeDataSet !== null) {
-                                            scope.$selectMatch(activeDataSet, dataSetSource.activeIndex, dataSetSource.matches[dataSetSource.activeIndex]);
+                                            scope.$selectMatch(activeDataSet, dataSetSource.activeIndex, dataSetSource.matches[dataSetSource.activeIndex], evt);
                                             scope.$apply();
                                         }
                                     } else if (evt.which === 27) { // Esc Key
@@ -699,6 +704,8 @@
                                                 matchLocals[itemName] = match;
 
                                                 var matchObj = new MatchModel(match, modelMapper(parentScope, matchLocals), viewMapper(parentScope, matchLocals));
+
+                                                scope.$prepareMatchModel(matchObj, dataSet);
 
                                                 dataSet.queried.matches.push(matchObj);
                                             });
@@ -747,6 +754,8 @@
                                             matchLocals[itemName] = match;
 
                                             var matchObj = new SuggestedMatchModel(match, modelMapper(parentScope, matchLocals), viewMapper(parentScope, matchLocals));
+
+                                            scope.$prepareMatchModel(matchObj, dataSet);
 
                                             dataSet.suggested.matches.push(matchObj);
                                         });
@@ -1138,6 +1147,7 @@
                         var tagManagerTpl = tAttrs.tgTypeaheadTagManagerTemplateUrl || 'tg-typeahead-tag-manager.tpl.html',
                             tagTpl = tAttrs.tgTypeaheadTagTemplateUrl || 'tg-typeahead-tag.tpl.html',
                             maxSelectedTags = parseInt(tAttrs.tgTypeaheadMaxSelectedTags) || 0,
+                            allowDuplicates = (tAttrs.tgTypeaheadAllowDuplicates === 'true'),
                             MatchModel = $injector.get('tgTypeaheadMatchModel'),
                             TagModel = $injector.get('tgTypeaheadTagModel');
 
@@ -1158,12 +1168,12 @@
                             scope.$templates.tag = tagTpl;
 
                             // internal functionality
-                            scope.canAddTag = function () {
+                            scope.$canAddTag = function () {
                                 return (maxSelectedTags === 0 || maxSelectedTags > scope.$tags.length);
                             };
 
-                            scope.addTag = function (tag) {
-                                if (tag && tag.match && !tag.match.selected && scope.canAddTag()) {
+                            scope.$addTag = function (tag) {
+                                if (tag && tag.match && !tag.match.selected && scope.$canAddTag()) {
                                     var evt = {
                                         context: scope.tgTypeaheadContext,
                                         tag: tag
@@ -1171,31 +1181,19 @@
 
                                     return tgTypeaheadCtrl.events.emit('onTagAdding', evt)
                                         .then(function () {
-                                            tag.match.selected = true;
-
                                             if (tag.dataSet) {
                                                 var model = scope.$getModel(),
                                                     src = model;
 
-                                                var matchLocals = {},
-                                                    matchModel = {},
-                                                    itemName = tag.dataSet.queried.source.itemName,
-                                                    viewMapper = tag.dataSet.queried.source.viewMapper,
-                                                    modelMapper = tag.dataSet.queried.source.modelMapper;
-
-                                                matchLocals[itemName] = tag.match.data;
-                                                viewMapper.assign(matchModel, viewMapper(parentScope, matchLocals));
-                                                modelMapper.assign(matchModel, modelMapper(parentScope, matchLocals));
-
-                                                tag.item = matchModel[itemName];
+                                                tag.item = tag.dataSet.queried.$getItem(tag.match, parentScope);
 
                                                 if (src) {
                                                     if (scope.$dataSets.length > 1) {
                                                         src = src[tag.dataSet.name];
                                                     }
 
-                                                    if (src.indexOf(tag.match.data) === -1) {
-                                                        src.push(tag.item || tag.match.data);
+                                                    if (src.indexOf(tag.item) === -1) {
+                                                        src.push(tag.item);
                                                     }
                                                 }
                                             }
@@ -1211,7 +1209,7 @@
                                 return $q.when(undefined);
                             };
 
-                            scope.removeTag = function (tag) {
+                            scope.$removeTag = function (tag) {
                                 var idx = scope.$tags.indexOf(tag);
 
                                 if (idx !== -1) {
@@ -1223,8 +1221,6 @@
 
                                     return tgTypeaheadCtrl.events.emit('onTagRemoving', evt)
                                         .then(function () {
-                                            tag.match.selected = false;
-
                                             if (tag.dataSet) {
                                                 var model = scope.$getModel(),
                                                     src = model;
@@ -1234,47 +1230,47 @@
                                                 }
 
                                                 if (src) {
-                                                    var mIdx = -1;
                                                     for (var i = 0, ln = src.length; i < ln; i++) {
                                                         if (angular.equals(src[i], tag.item)) {
-                                                            mIdx = i;
+                                                            src.splice(i, 1);
                                                             break;
                                                         }
-                                                    }
-                                                    //var mIdx = src.indexOf(tag.item);
-
-                                                    if (mIdx !== -1) {
-                                                        src.splice(mIdx, 1);
                                                     }
                                                 }
                                             }
 
-                                            scope.$tags.splice(idx, 1);
+                                            idx = scope.$tags.indexOf(tag);
 
-                                            tgTypeaheadCtrl.events.emit('onTagRemoved', evt);
+                                            if (idx !== -1) {
+                                                scope.$tags.splice(idx, 1);
+
+                                                tgTypeaheadCtrl.events.emit('onTagRemoved', evt);
+                                            }
                                         });
                                 }
 
                                 return $q.when(false);
                             };
 
-                            scope.findTag = function (match) {
-                                for (var i = 0, n = scope.$tags.length; i < n; i++) {
-                                    if (scope.$tags[i].match.model === match.model) {
+                            scope.$findTag = function (match) {
+                                for (var i = 0, ln = scope.$tags.length; i < ln; i++) {
+                                    if (angular.equals(scope.$tags[i].match.model, match.model)) {
                                         return scope.$tags[i];
                                     }
                                 }
                             };
 
-                            scope.clearTags = function () {
-                                scope.$tags.length = 0;
+                            scope.$clearTags = function () {
+                                for (var i = 0, ln = scope.$tags.length; i < ln; i++) {
+                                    scope.$removeTag(scope.$tags[i]);
+                                }
                             };
 
                             scope.hasAllSelected = function (dataSet) {
                                 var dataSetSource = scope.getDataSetSource(dataSet);
 
                                 if (dataSetSource.matches.length > 0) {
-                                    for (var i = 0, n = dataSetSource.matches.length; i < n; i++) {
+                                    for (var i = 0, ln = dataSetSource.matches.length; i < ln; i++) {
                                         if (!dataSetSource.matches[i].selected) {
                                             return false;
                                         }
@@ -1287,31 +1283,35 @@
                             };
 
                             scope.selectAll = function (dataSet, $event) {
+                                if ($event) {
+                                    $event.stopPropagation();
+                                    // emulate ctrl key hold for multi-selection
+                                    $event.ctrlKey = true;
+                                }
+
                                 var dataSetSource = scope.getDataSetSource(dataSet);
 
                                 dataSetSource.matches.forEach(function (match, index) {
                                     if (!match.selected) {
-                                        scope.$selectMatch(dataSet, index, match);
+                                        scope.$selectMatch(dataSet, index, match, $event);
                                     }
                                 });
-
-                                if ($event) {
-                                    $event.stopPropagation();
-                                }
                             };
 
                             scope.deselectAll = function (dataSet, $event) {
+                                if ($event) {
+                                    $event.stopPropagation();
+                                    // emulate ctrl key hold for multi-deselection
+                                    $event.ctrlKey = true;
+                                }
+
                                 var dataSetSource = scope.getDataSetSource(dataSet);
 
                                 dataSetSource.matches.forEach(function (match, index) {
                                     if (match.selected) {
-                                        scope.$selectMatch(dataSet, index, match);
+                                        scope.$selectMatch(dataSet, index, match, $event);
                                     }
                                 });
-
-                                if ($event) {
-                                    $event.stopPropagation();
-                                }
                             };
 
                             /**
@@ -1332,7 +1332,7 @@
                             tgTypeaheadCtrl.$overrideFn('$onKeyDown', function (evt) {
                                 if (evt.which === 8 && scope.$term === null) {
                                     if (scope.$tags.length > 0) {
-                                        scope.removeTag(scope.$tags[scope.$tags.length - 1]);
+                                        scope.$removeTag(scope.$tags[scope.$tags.length - 1]);
                                     }
                                 } else {
                                     this.$baseFn(evt);
@@ -1363,12 +1363,14 @@
                                 return result;
                             });
 
-                            tgTypeaheadCtrl.$overrideFn('$isVisibleClear', function (evt) {
+                            tgTypeaheadCtrl.$overrideFn('$isVisibleClear', function () {
                                 return (attrs.tgTypeaheadDisplayClean === 'true' && scope.$tags.length > 1);
                             });
 
-                            tgTypeaheadCtrl.$overrideFn('$clear', function (evt) {
-                                scope.clearTags();
+                            tgTypeaheadCtrl.$overrideFn('$clear', function ($event) {
+                                this.$baseFn($event);
+
+                                scope.$clearTags();
                             });
 
                             tgTypeaheadCtrl.$overrideFn('$selectMatch', function (dataSet, index, match, $event) {
@@ -1383,15 +1385,17 @@
 
                                 tgTypeaheadCtrl.trigger('onMatchSelecting', evt)
                                     .then(function () {
-                                        var tag = scope.findTag(match);
+                                        var tag = scope.$findTag(match);
 
                                         // multi selection: select / deselect
                                         if (tag === undefined) {
-                                            var tag = new TagModel(match, dataSet);
+                                            tag = new TagModel(match, dataSet);
 
-                                            scope.addTag(tag);
+                                            scope.$addTag(tag);
+                                            match.selected = true;
                                         } else {
-                                            scope.removeTag(tag);
+                                            scope.$removeTag(tag);
+                                            match.selected = false;
                                         }
 
                                         if (!$event || !$event.ctrlKey) {
@@ -1470,12 +1474,22 @@
                                             var match = new MatchModel(item, modelMapper(scope.$parent, matchLocals), viewMapper(scope.$parent, matchLocals)),
                                                 tag = new TagModel(match, dataSet);
 
-                                            scope.addTag(tag);
+                                            scope.$addTag(tag);
                                         });
                                     });
                                 }
 
                                 return model;
+                            });
+
+                            tgTypeaheadCtrl.$overrideFn('$prepareMatchModel', function (matchModel, dataSet) {
+                                if (scope.$tags.length > 0) {
+                                    var tag = scope.$findTag(matchModel);
+
+                                    if (tag !== undefined) {
+                                        matchModel.selected = true;
+                                    }
+                                }
                             });
 
                             tgTypeaheadCtrl.$overrideFn('$updateInputElement', function () {
@@ -1539,26 +1553,26 @@
                             tgTypeaheadCtrl.addTag = function (match, dataSet) {
                                 var tag = new TagModel(match, dataSet);
 
-                                return scope.addTag(tag);
+                                return scope.$addTag(tag);
                             };
 
                             tgTypeaheadCtrl.removeTag = function (tag) {
-                                return scope.removeTag(tag);
+                                return scope.$removeTag(tag);
                             };
 
                             tgTypeaheadCtrl.clearTags = function () {
-                                scope.clearTags();
+                                scope.$clearTags();
                             };
 
                             /**
                              * watches
                              */
                             scope.$watch('$tags', function (tags) {
-                                $timeout(function () {
-                                    if (attrs.required) {
+                                if (attrs.required) {
+                                    $timeout(function () {
                                         ngModelCtrl.$setValidity('tagsRequired', (tags.length !== 0));
-                                    }
-                                });
+                                    });
+                                }
                             }, true);
                         }
 
@@ -1566,9 +1580,7 @@
                             pre: preLink,
                             post: null
                         };
-                    },
-                    controller: [function () {
-                    }]
+                    }
                 };
             }
         ])
@@ -1850,45 +1862,60 @@
                 this.limit = displayedItems;
                 this.active = true;
                 this.activeIndex = -1;
-
-                this.$hasMore = function () {
-                    return (this.limit < this.matches.length);
-                };
-
-                this.$showAll = function ($event) {
-                    this.limit = this.matches.length;
-
-                    if ($event) {
-                        $event.stopPropagation();
-                    }
-                };
-
-                this.$showMore = function ($event) {
-                    var limit = this.limit + this.limitStep;
-
-                    if (limit > this.matches.length) {
-                        limit = this.matches.length;
-                    }
-
-                    if (limit < this.limitStep) {
-                        limit = this.limitStep;
-                    }
-
-                    this.limit = limit;
-
-                    if ($event) {
-                        $event.stopPropagation();
-                    }
-                };
-
-                this.$hideMore = function ($event) {
-                    this.limit = this.displayedItems;
-
-                    if ($event) {
-                        $event.stopPropagation();
-                    }
-                };
             }
+
+            SourceModelFactory.prototype.$hasMore = function () {
+                return (this.limit < this.matches.length);
+            };
+
+            SourceModelFactory.prototype.$showAll = function ($event) {
+                this.limit = this.matches.length;
+
+                if ($event) {
+                    $event.stopPropagation();
+                }
+            };
+
+            SourceModelFactory.prototype.$showMore = function ($event) {
+                var limit = this.limit + this.limitStep;
+
+                if (limit > this.matches.length) {
+                    limit = this.matches.length;
+                }
+
+                if (limit < this.limitStep) {
+                    limit = this.limitStep;
+                }
+
+                this.limit = limit;
+
+                if ($event) {
+                    $event.stopPropagation();
+                }
+            };
+
+            SourceModelFactory.prototype.$hideMore = function ($event) {
+                this.limit = this.displayedItems;
+
+                if ($event) {
+                    $event.stopPropagation();
+                }
+            };
+
+            SourceModelFactory.prototype.$getItem = function (matchModel, scope) {
+                var exprObj = {},
+                    matchLocals = {},
+                    itemName = this.source.itemName,
+                    viewMapper = this.source.viewMapper,
+                    modelMapper = this.source.modelMapper;
+
+                matchLocals[itemName] = matchModel.data;
+
+                viewMapper.assign(exprObj, viewMapper(scope, matchLocals));
+                modelMapper.assign(exprObj, modelMapper(scope, matchLocals));
+
+                return exprObj[itemName];
+            };
 
             return SourceModelFactory;
         }])
