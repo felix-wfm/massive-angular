@@ -11,8 +11,19 @@
             model1: null,
             model2: null,
             model3: [],
-            model4: []
+            model4: [],
+            model5: null
         };
+
+        $scope.suggestions = [{
+            "id": 44,
+            "code": "BS",
+            "name": "Bahamas"
+        }, {
+            "id": 450,
+            "code": "MG",
+            "name": "Madagascar"
+        }];
 
         $scope.control = {
             typeahead: {

@@ -272,6 +272,11 @@
                                 onMatchSelected: $parse(scope.tgTypeaheadSelected)
                             };
 
+                            scope.$promisesHolder = {
+                                regularCancelPromise: undefined,
+                                suggestedCancelPromise: undefined
+                            };
+
                             scope.getDataSetSource = function (dataSet) {
                                 if (dataSet) {
                                     var popupOpened = scope.$stateHolder.popup.opened;
@@ -367,6 +372,7 @@
                                 scope.$cancelAllRequests();
 
                                 scope.$stateHolder.loader = true;
+                                scope.$promisesHolder.regularCancelPromise = $q.defer();
 
                                 $q.all(collectSources(searchTerm))
                                     .then(function () {
@@ -387,13 +393,16 @@
                                 scope.$cancelAllRequests();
 
                                 scope.$stateHolder.loader = true;
+                                scope.$promisesHolder.suggestedCancelPromise = $q.defer();
 
                                 $q.all(collectSuggestedSources())
                                     .then(function () {
                                         if (scope.$dataHolder.collectedPromises.length > 0) {
                                             clearCollectedPromises();
 
-                                            scope.$openSuggestedPopup();
+                                            $timeout(function () {
+                                                scope.$openSuggestedPopup();
+                                            });
                                         }
                                     }, function () {
                                         scope.$cancelAllRequests();
@@ -405,6 +414,19 @@
 
                             scope.$cancelAllRequests = function () {
                                 scope.$stateHolder.loader = false;
+
+                                var rcp = scope.$promisesHolder.regularCancelPromise,
+                                    scp = scope.$promisesHolder.suggestedCancelPromise;
+
+                                if (rcp) {
+                                    rcp.reject();
+                                    scope.$promisesHolder.regularCancelPromise = undefined;
+                                }
+
+                                if (scp) {
+                                    scp.reject();
+                                    scope.$promisesHolder.suggestedCancelPromise = undefined;
+                                }
 
                                 var collectedPromises = scope.$dataHolder.collectedPromises;
 
@@ -516,13 +538,9 @@
                                 }
 
                                 if (activeDataSet !== null) {
-                                    var matchLocals = {},
-                                        itemName = activeDataSet.queried.source.itemName,
-                                        viewMapper = activeDataSet.queried.source.viewMapper;
+                                    var match = (single) ? model : model[activeDataSet.name];
 
-                                    matchLocals[itemName] = (single) ? model : model[activeDataSet.name];
-
-                                    scope.$term = viewMapper(scope.$parent, matchLocals);
+                                    scope.$term = activeDataSet.queried.$getItem(match, scope.$parent).value;
                                 }
 
                                 return model;
@@ -671,12 +689,15 @@
                             scope.$trigger = selfCtrl.trigger.bind(selfCtrl);
 
                             function collectSources(searchTerm) {
-                                var collectedPromises = scope.$dataHolder.collectedPromises;
+                                var collectedPromises = scope.$dataHolder.collectedPromises,
+                                    rcp = scope.$promisesHolder.regularCancelPromise;
+
+                                if (rcp) {
+                                    collectedPromises.push(rcp.promise);
+                                }
 
                                 scope.$dataSets.forEach(function (dataSet) {
                                     dataSet.data = {};
-                                    dataSet.queried.matches.length = 0;
-                                    dataSet.queried.$hideMore();
 
                                     var sourceLocals = {
                                         $queried: true,
@@ -687,30 +708,34 @@
                                         }, scope.$prepareSourceContext() || {})
                                     };
 
-                                    var matchLocals = {},
-                                        source = dataSet.queried.source,
-                                        itemName = source.itemName,
-                                        viewMapper = source.viewMapper,
-                                        modelMapper = source.modelMapper,
-                                        sourceMapper = source.sourceMapper,
+                                    var sourceModel = dataSet.queried,
+                                        sourceMapper = sourceModel.source.sourceMapper,
                                         sourceResult = sourceMapper(parentScope, sourceLocals),
                                         promise = (isPromise(sourceResult)) ? sourceResult : $q.when(sourceResult);
 
-                                    promise.then(function (response) {
-                                        if (scope.$term === searchTerm) {
-                                            var filtered = response;
+                                    promise
+                                        .then(function (response) {
+                                            if (scope.$term === searchTerm) {
+                                                sourceModel.matches.length = 0;
+                                                sourceModel.$hideMore();
 
-                                            angular.forEach(filtered, function (match) {
-                                                matchLocals[itemName] = match;
+                                                var matches = response;
 
-                                                var matchObj = new MatchModel(match, modelMapper(parentScope, matchLocals), viewMapper(parentScope, matchLocals));
+                                                angular.forEach(matches, function (match) {
+                                                    var item = sourceModel.$getItem(match, parentScope),
+                                                        matchObj = new MatchModel(match, item.model, item.value);
 
-                                                scope.$prepareMatchModel(matchObj, dataSet);
+                                                    scope.$prepareMatchModel(matchObj, dataSet);
 
-                                                dataSet.queried.matches.push(matchObj);
-                                            });
-                                        }
-                                    });
+                                                    sourceModel.matches.push(matchObj);
+                                                });
+                                            }
+                                        })
+                                        .finally(function () {
+                                            if (rcp) {
+                                                rcp.resolve();
+                                            }
+                                        });
 
                                     collectedPromises.push(promise);
                                 });
@@ -719,7 +744,12 @@
                             }
 
                             function collectSuggestedSources() {
-                                var collectedPromises = scope.$dataHolder.collectedPromises;
+                                var collectedPromises = scope.$dataHolder.collectedPromises,
+                                    scp = scope.$promisesHolder.suggestedCancelPromise;
+
+                                if (scp) {
+                                    collectedPromises.push(scp.promise);
+                                }
 
                                 scope.$dataSets.forEach(function (dataSet) {
                                     if (!dataSet.suggested || !dataSet.suggested.source) {
@@ -727,8 +757,6 @@
                                     }
 
                                     dataSet.data = {};
-                                    dataSet.suggested.matches.length = 0;
-                                    dataSet.suggested.$hideMore();
 
                                     var sourceLocals = {
                                         $suggested: true,
@@ -738,28 +766,32 @@
                                         }, scope.$prepareSourceContext() || {})
                                     };
 
-                                    var matchLocals = {},
-                                        source = dataSet.suggested.source,
-                                        itemName = source.itemName,
-                                        viewMapper = source.viewMapper,
-                                        modelMapper = source.modelMapper,
-                                        sourceMapper = source.sourceMapper,
+                                    var sourceModel = dataSet.suggested,
+                                        sourceMapper = sourceModel.source.sourceMapper,
                                         sourceResult = sourceMapper(parentScope, sourceLocals),
                                         promise = (isPromise(sourceResult)) ? sourceResult : $q.when(sourceResult);
 
-                                    promise.then(function (response) {
-                                        var filtered = response;
+                                    promise
+                                        .then(function (response) {
+                                            sourceModel.matches.length = 0;
+                                            sourceModel.$hideMore();
 
-                                        angular.forEach(filtered, function (match) {
-                                            matchLocals[itemName] = match;
+                                            var matches = response;
 
-                                            var matchObj = new SuggestedMatchModel(match, modelMapper(parentScope, matchLocals), viewMapper(parentScope, matchLocals));
+                                            angular.forEach(matches, function (match) {
+                                                var item = sourceModel.$getItem(match, parentScope),
+                                                    matchObj = new SuggestedMatchModel(match, item.model, item.value);
 
-                                            scope.$prepareMatchModel(matchObj, dataSet);
+                                                scope.$prepareMatchModel(matchObj, dataSet);
 
-                                            dataSet.suggested.matches.push(matchObj);
+                                                sourceModel.matches.push(matchObj);
+                                            });
+                                        })
+                                        .finally(function () {
+                                            if (scp) {
+                                                scp.resolve();
+                                            }
                                         });
-                                    });
 
                                     collectedPromises.push(promise);
                                 });
@@ -1185,15 +1217,25 @@
                                                 var model = scope.$getModel(),
                                                     src = model;
 
-                                                tag.item = tag.dataSet.queried.$getItem(tag.match, parentScope);
-
                                                 if (src) {
                                                     if (scope.$dataSets.length > 1) {
                                                         src = src[tag.dataSet.name];
                                                     }
 
-                                                    if (src.indexOf(tag.item) === -1) {
-                                                        src.push(tag.item);
+                                                    var idx = -1;
+
+                                                    if (!allowDuplicates) {
+                                                        // check if match model already exist in model
+                                                        for (var i = 0, ln = src.length; i < ln; i++) {
+                                                            if (angular.equals(src[i], tag.match.model)) {
+                                                                idx = i;
+                                                                break;
+                                                            }
+                                                        }
+                                                    }
+
+                                                    if (idx === -1) {
+                                                        src.push(tag.match.model);
                                                     }
                                                 }
                                             }
@@ -1230,11 +1272,18 @@
                                                 }
 
                                                 if (src) {
+                                                    var idx = -1;
+
+                                                    // check if match model already exist in model
                                                     for (var i = 0, ln = src.length; i < ln; i++) {
-                                                        if (angular.equals(src[i], tag.item)) {
-                                                            src.splice(i, 1);
+                                                        if (angular.equals(src[i], tag.match.model)) {
+                                                            idx = i;
                                                             break;
                                                         }
+                                                    }
+
+                                                    if (idx !== -1) {
+                                                        src.splice(idx, 1);
                                                     }
                                                 }
                                             }
@@ -1388,7 +1437,7 @@
                                         var tag = scope.$findTag(match);
 
                                         // multi selection: select / deselect
-                                        if (tag === undefined) {
+                                        if (tag === undefined || allowDuplicates) {
                                             tag = new TagModel(match, dataSet);
 
                                             scope.$addTag(tag);
@@ -1398,7 +1447,7 @@
                                             match.selected = false;
                                         }
 
-                                        if (!$event || !$event.ctrlKey) {
+                                        if (!$event || !($event.ctrlKey | $event.metaKey)) {
                                             scope.$onOutsideClick();
                                         }
                                     });
@@ -1463,15 +1512,11 @@
 
                                     activeSources.forEach(function (activeSource) {
                                         var dataSet = activeSource.dataSet,
-                                            source = dataSet.queried.source,
-                                            itemName = source.itemName,
-                                            modelMapper = source.modelMapper,
-                                            viewMapper = source.viewMapper;
+                                            sourceModel = dataSet.queried;
 
-                                        activeSource.source.forEach(function (item) {
-                                            matchLocals[itemName] = item;
-
-                                            var match = new MatchModel(item, modelMapper(scope.$parent, matchLocals), viewMapper(scope.$parent, matchLocals)),
+                                        activeSource.source.forEach(function (match) {
+                                            var item = sourceModel.$getItem(match, scope.$parent),
+                                                match = new MatchModel(match, item.model, item.value),
                                                 tag = new TagModel(match, dataSet);
 
                                             scope.$addTag(tag);
@@ -1483,7 +1528,7 @@
                             });
 
                             tgTypeaheadCtrl.$overrideFn('$prepareMatchModel', function (matchModel, dataSet) {
-                                if (scope.$tags.length > 0) {
+                                if (!allowDuplicates && scope.$tags.length > 0) {
                                     var tag = scope.$findTag(matchModel);
 
                                     if (tag !== undefined) {
@@ -1902,19 +1947,18 @@
                 }
             };
 
-            SourceModelFactory.prototype.$getItem = function (matchModel, scope) {
-                var exprObj = {},
-                    matchLocals = {},
+            SourceModelFactory.prototype.$getItem = function (match, scope) {
+                var matchLocals = {},
                     itemName = this.source.itemName,
                     viewMapper = this.source.viewMapper,
                     modelMapper = this.source.modelMapper;
 
-                matchLocals[itemName] = matchModel.data;
+                matchLocals[itemName] = match;
 
-                viewMapper.assign(exprObj, viewMapper(scope, matchLocals));
-                modelMapper.assign(exprObj, modelMapper(scope, matchLocals));
-
-                return exprObj[itemName];
+                return {
+                    model: modelMapper(scope, matchLocals),
+                    value: viewMapper(scope, matchLocals)
+                };
             };
 
             return SourceModelFactory;
