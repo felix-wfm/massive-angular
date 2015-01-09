@@ -98,10 +98,11 @@
     }
 
     .tg-typeahead__tag-name {
-        display: block;
         text-overflow: ellipsis;
         overflow: hidden;
         white-space: nowrap;
+		display: inline-block;
+		max-width: calc(100% - 16px);
     }
 
     .tg-typeahead__tag-remove {
