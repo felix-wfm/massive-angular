@@ -33,7 +33,13 @@
 
                                 $timeout(function () {
                                     element.html(function (index, html) {
-                                        return $compile(html.replace(rx, '<strong>$&</strong>'))(scope);
+                                        html = html.replace(rx, '<strong>$&</strong>');
+
+                                        if (attrs.tgHighlightHtmlCompile === 'true') {
+                                            return $compile('<span>' + html + '</span>')(scope);
+                                        }
+
+                                        return html;
                                     });
                                 });
                             }

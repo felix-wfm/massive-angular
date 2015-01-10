@@ -8,7 +8,7 @@
              ng-if="!$dataSets[0].data.noResults">
             <a href=""
                ng-click="!hasAllSelected($dataSets[0]) ? selectAll($dataSets[0], $event) : deselectAll($dataSets[0], $event);">
-				<i class="fa" style="width: 14px;" ng-class="{ 'fa-check': hasAllSelected($dataSets[0]) }"></i>
+                <i class="fa" style="width: 14px;" ng-class="{ 'fa-check': hasAllSelected($dataSets[0]) }"></i>
                 <strong>Select All ({{ $dataSets[0].queried.matches.length }})</strong>
             </a>
         </div>
@@ -16,7 +16,8 @@
     <div tg-typeahead-data-set="result as result.name for result in getResultsAsync($viewValue, $context)">
         <div tg-typeahead-data-set-item="">
             <div class="tg-typeahead__suggestions-group-item-inner clearfix"
-                 tg-highlight-html="{{ $term }}">
+                 tg-highlight-html="{{ $term }}"
+                 tg-highlight-html-compile="true">
                 <div class="tg-typeahead__item-right">
                     {{ $match.data.code }}
                 </div>
