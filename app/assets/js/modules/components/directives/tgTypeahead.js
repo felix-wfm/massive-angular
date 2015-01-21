@@ -935,9 +935,13 @@
                                 $document.off('keydown', onDocumentKeydown);
                             });
 
-                            var model = scope.$prepareModel(scope.$getModel());
+                            scope.$watch(scope.$getModel, function (model) {
+                                scope.$clear();
 
-                            scope.$setModel(model, true);
+                                model = scope.$prepareModel(model);
+
+                                scope.$setModel(model, true);
+                            });
                         }
 
                         return {
@@ -1180,6 +1184,7 @@
                             tagTpl = tAttrs.tgTypeaheadTagTemplateUrl || 'tg-typeahead-tag.tpl.html',
                             maxSelectedTags = parseInt(tAttrs.tgTypeaheadMaxSelectedTags) || 0,
                             allowDuplicates = (tAttrs.tgTypeaheadAllowDuplicates === 'true'),
+                            postponedSelection = (tAttrs.tgTypeaheadPostponedSelection === 'true'),
                             MatchModel = $injector.get('tgTypeaheadMatchModel'),
                             TagModel = $injector.get('tgTypeaheadTagModel');
 
@@ -1363,6 +1368,24 @@
                                 });
                             };
 
+                            scope.applySelections = function (dataSets) {
+                                for (var i = 0, ln = dataSets.length; i < ln; i++) {
+                                    var dataSet = dataSets[i];
+
+                                    if (dataSet.queried) {
+                                        var matches = dataSet.queried.matches;
+
+                                        for (var j = 0, lm = matches.length; j < lm; j++) {
+                                            if (matches[j].selected) {
+                                                var tag = new TagModel(matches[j], dataSet);
+
+                                                scope.$addTag(tag);
+                                            }
+                                        }
+                                    }
+                                }
+                            };
+
                             /**
                              * tgTypeahead methods overrides
                              */
@@ -1434,20 +1457,27 @@
 
                                 tgTypeaheadCtrl.trigger('onMatchSelecting', evt)
                                     .then(function () {
-                                        var tag = scope.$findTag(match);
+                                        if (!postponedSelection) {
+                                            var tag = scope.$findTag(match);
 
-                                        // multi selection: select / deselect
-                                        if (tag === undefined || allowDuplicates) {
-                                            tag = new TagModel(match, dataSet);
+                                            // multi selection: select / deselect
+                                            if (tag === undefined || allowDuplicates) {
+                                                tag = new TagModel(match, dataSet);
 
-                                            scope.$addTag(tag);
-                                            match.selected = true;
+                                                scope.$addTag(tag);
+
+                                                match.selected = true;
+                                            } else {
+                                                scope.$removeTag(tag);
+
+                                                match.selected = false;
+                                            }
                                         } else {
-                                            scope.$removeTag(tag);
-                                            match.selected = false;
+                                            match.selected = !match.selected;
                                         }
 
-                                        if (!$event || !($event.ctrlKey | $event.metaKey)) {
+                                        if (!postponedSelection &&
+                                            (!$event || !($event.ctrlKey | $event.metaKey))) {
                                             scope.$onOutsideClick();
                                         }
                                     });
@@ -1457,7 +1487,6 @@
                                 var single = (scope.$dataSets.length === 1),
                                     multiple = (scope.$dataSets.length > 1),
                                     model = null;
-                                ;
 
                                 if (single) {
                                     model = [];
@@ -1508,8 +1537,6 @@
                                 }
 
                                 if (activeSources.length > 0) {
-                                    var matchLocals = {};
-
                                     activeSources.forEach(function (activeSource) {
                                         var dataSet = activeSource.dataSet,
                                             sourceModel = dataSet.queried;

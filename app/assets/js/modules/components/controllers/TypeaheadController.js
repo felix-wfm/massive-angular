@@ -12,7 +12,8 @@
             model2: null,
             model3: [],
             model4: [],
-            model5: null
+            model5: null,
+            model6: []
         };
 
         $scope.suggestions = [{
