@@ -2,7 +2,9 @@
      tg-typeahead-placeholder="Search..."
      tg-typeahead-display-clean="true"
      tg-typeahead-tag-manager=""
-     ng-model="__typeahead.model4">
+     tg-typeahead-postponed-selection="true"
+     tg-typeahead-tag-ascending-order="true"
+     ng-model="__typeahead.model6">
     <div tg-typeahead-popup-header="">
         <div class="tg-typeahead__suggestions-header-inner"
              ng-if="!$dataSets[0].data.noResults">
@@ -32,6 +34,17 @@
                  ng-if="$dataSet.data.noResults">
                 No results for <strong>{{ $term }}</strong>
             </div>
+        </div>
+    </div>
+    <div tg-typeahead-popup-footer="">
+        <div class="clearfix" style="padding: 5px 10px;"
+             ng-if="!$dataSet[0].data.noResults">
+            <button class="pull-right"
+                    ng-click="applySelections($dataSets);">Apply
+            </button>
+            <button class="pull-right" style="margin-right: 5px;"
+                    ng-click="$closePopup();">Cancel
+            </button>
         </div>
     </div>
 </div>

@@ -169,3 +169,27 @@
         </div>
     </div>
 </div>
+
+<p class="lead">
+    Typeahead with tags and postponed selection
+</p>
+
+<div class="bs-example">
+    <div ng-include="'./view/components/partials/tgTypeahead/example6.html'"></div>
+
+    <div tg-tabset=""
+         tg-tabset-active-tab="result">
+        <div tg-tab="result"
+             tg-tab-title="RESULT">
+            <div class="bs-callout bs-callout-success">
+                <h4>MODEL</h4>
+
+                <p hljs language="js" source="toJson(__typeahead.model6)" compile="true"></p>
+            </div>
+        </div>
+        <div tg-tab="html"
+             tg-tab-title="HTML">
+            <div hljs language="xml" include="'./view/components/partials/tgTypeahead/example6.html'"></div>
+        </div>
+    </div>
+</div>
