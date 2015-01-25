@@ -41,7 +41,7 @@
                 '        ng-show="$isVisibleInput()">' +
                 '       <a href="" class="tg-typeahead__clear-link"' +
                 '          ng-show="!$stateHolder.loader && $isVisibleClear()"' +
-                '          ng-click="$clear($event);">Delete All</a>' +
+                '          ng-click="$clear($event);">Remove All</a>' +
                 '       <div class="tg-typeahead__input-wrap">' +
                 '           <input type="text" class="tg-typeahead__input"' +
                 '              placeholder="{{ $getPlaceholder() }}"' +
@@ -79,10 +79,7 @@
                 '            <ul class="tg-typeahead__suggestions-group">' +
                 '                <li class="tg-typeahead__suggestions-group-item"' +
                 '                    ng-repeat="$match in $dataSet.queried.matches | limitTo:$dataSet.queried.limit"' +
-                '                    ng-class="{ active: $index === $dataSet.queried.activeIndex, selected: $match.selected, disabled: $match.disabled }"' +
-                '                    ng-mouseenter="$setActiveMatch($dataSet, $index);"' +
-                '                    ng-mouseleave="$dataSet.queried.activeIndex = -1;"' +
-                '                    ng-mousedown="!$match.disabled && $selectMatch($dataSet, $index, $match, $event);">' +
+                '                    ng-class="{ active: $index === $dataSet.queried.activeIndex, selected: $match.selected, disabled: $match.disabled }">' +
                 '                    <div tg-typeahead-render-template="$dataSet.templates.item || $templates.dataSet.item"></div>' +
                 '                </li>' +
                 '            </ul>' +
@@ -111,10 +108,7 @@
                 '            <ul class="tg-typeahead__suggestions-group">' +
                 '                <li class="tg-typeahead__suggestions-group-item"' +
                 '                    ng-repeat="$match in $dataSet.suggested.matches | limitTo:$dataSet.suggested.limit"' +
-                '                    ng-class="{ active: $index === $dataSet.suggested.activeIndex, selected: $match.selected, disabled: $match.disabled }"' +
-                '                    ng-mouseenter="$setActiveMatch($dataSet, $index);"' +
-                '                    ng-mouseleave="$dataSet.suggested.activeIndex = -1;"' +
-                '                    ng-mousedown="!$match.disabled && $selectMatch($dataSet, $index, $match, $event);">' +
+                '                    ng-class="{ active: $index === $dataSet.suggested.activeIndex, selected: $match.selected, disabled: $match.disabled }">' +
                 '                    <div tg-typeahead-render-template="$dataSet.templates.item || $templates.dataSet.item"></div>' +
                 '                </li>' +
                 '            </ul>' +
@@ -131,7 +125,7 @@
 
             $templateCache.put('tg-typeahead-tag-manager.tpl.html',
                 '<div class="tg-typeahead__tab-manager">' +
-                '   <div ng-repeat="$tag in $tags">' +
+                '   <div ng-repeat="$tag in $tags | orderBy:$tagsOrder">' +
                 '       <div tg-typeahead-render-template="$templates.tag"></div>' +
                 '   </div>' +
                 '</div>');
@@ -202,7 +196,7 @@
                     },
                     priority: 4,
                     compile: function (tElement, tAttrs) {
-                        var KEYBOARD_KEYS = [9, 13, 27, 38, 40];
+                        var KEYBOARD_KEYS = [9, 13, 27, 32, 38, 40];
 
                         var $getModelValue = $parse(tAttrs.ngModel),
                             $setModelValue = $getModelValue.assign,
@@ -279,9 +273,13 @@
 
                             scope.getDataSetSource = function (dataSet) {
                                 if (dataSet) {
-                                    var popupOpened = scope.$stateHolder.popup.opened;
+                                    if (scope.$stateHolder.popup.opened) {
+                                        return dataSet.queried;
+                                    }
 
-                                    return (popupOpened) ? dataSet.queried : dataSet.suggested;
+                                    if (scope.$stateHolder.suggestedPopup.opened) {
+                                        return dataSet.suggested;
+                                    }
                                 }
                             };
 
@@ -290,6 +288,7 @@
 
                                 scope.$dataSets.forEach(function (_dataSet) {
                                     dataSetSource = scope.getDataSetSource(_dataSet);
+
                                     if (dataSetSource) {
                                         dataSetSource.$hideMore();
                                         dataSetSource.active = (!dataSet);
@@ -300,8 +299,11 @@
 
                                 if (scope.selectedDataSet) {
                                     dataSetSource = scope.getDataSetSource(scope.selectedDataSet);
-                                    dataSetSource.$showMore();
-                                    dataSetSource.active = true;
+
+                                    if (dataSetSource) {
+                                        dataSetSource.$showMore();
+                                        dataSetSource.active = true;
+                                    }
                                 }
 
                                 element.find('.tg-typeahead__suggestions-container').scrollTop();
@@ -359,7 +361,6 @@
 
                             scope.$clear = function ($event) {
                                 scope.$clearTypeahead();
-                                scope.$onOutsideClick();
                             };
 
                             scope.$updateInputElement = function () {
@@ -450,6 +451,7 @@
 
                                 scope.$dataSets.forEach(function (_dataSet) {
                                     dataSetSource = scope.getDataSetSource(_dataSet);
+
                                     if (dataSetSource) {
                                         dataSetSource.activeIndex = (_dataSet === dataSet) ? index : -1;
                                     }
@@ -587,7 +589,9 @@
                                 if (scope.selectedDataSet) {
                                     var dataSetSource = scope.getDataSetSource(scope.selectedDataSet);
 
-                                    dataSetSource.$showMore();
+                                    if (dataSetSource) {
+                                        dataSetSource.$showMore();
+                                    }
                                 }
                             };
 
@@ -603,9 +607,11 @@
                                 switch (type) {
                                     case 'popup':
                                         scope.$templates.popup.element = $element[0];
+                                        attachEventsToMatchedItems($element[0]);
                                         break;
                                     case 'suggestedPopup':
                                         scope.$templates.suggestedPopup.element = $element[0];
+                                        attachEventsToMatchedItems($element[0]);
                                         break;
                                 }
                             };
@@ -644,44 +650,46 @@
 
                                     dataSetSource = scope.getDataSetSource(activeDataSet);
 
-                                    if (evt.which === 40) { // Down Key
-                                        var min = Math.min(dataSetSource.limit, dataSetSource.matches.length);
+                                    if (dataSetSource) {
+                                        if (evt.which === 40) { // Down Key
+                                            var min = Math.min(dataSetSource.limit, dataSetSource.matches.length);
 
-                                        if (dataSetSource.activeIndex + 1 < min) {
-                                            dataSetSource.activeIndex++;
-                                        } else if (nextDataSet) {
-                                            scope.$setActiveMatch(nextDataSet, 0);
-                                        } else {
-                                            return;
-                                        }
-
-                                        $timeout(scrollToActiveMatch);
-                                        scope.$digest();
-                                    } else if (evt.which === 38) { // Up Key
-                                        if (dataSetSource.activeIndex > 0) {
-                                            dataSetSource.activeIndex--;
-                                        } else if (prevDataSet) {
-                                            dataSetSource = scope.getDataSetSource(prevDataSet);
-
-                                            if (dataSetSource) {
-                                                var min = Math.min(dataSetSource.limit, dataSetSource.matches.length);
-                                                scope.$setActiveMatch(prevDataSet, min - 1);
+                                            if (dataSetSource.activeIndex + 1 < min) {
+                                                dataSetSource.activeIndex++;
+                                            } else if (nextDataSet) {
+                                                scope.$setActiveMatch(nextDataSet, 0);
+                                            } else {
+                                                return;
                                             }
-                                        } else {
-                                            return;
-                                        }
 
-                                        $timeout(scrollToActiveMatch);
-                                        scope.$digest();
-                                    } else if (evt.which === 13) { // Enter Key
-                                        if (activeDataSet !== null) {
-                                            scope.$selectMatch(activeDataSet, dataSetSource.activeIndex, dataSetSource.matches[dataSetSource.activeIndex], evt);
-                                            scope.$apply();
+                                            $timeout(scrollToActiveMatch);
+                                            scope.$digest();
+                                        } else if (evt.which === 38) { // Up Key
+                                            if (dataSetSource.activeIndex > 0) {
+                                                dataSetSource.activeIndex--;
+                                            } else if (prevDataSet) {
+                                                dataSetSource = scope.getDataSetSource(prevDataSet);
+
+                                                if (dataSetSource) {
+                                                    var min = Math.min(dataSetSource.limit, dataSetSource.matches.length);
+                                                    scope.$setActiveMatch(prevDataSet, min - 1);
+                                                }
+                                            } else {
+                                                return;
+                                            }
+
+                                            $timeout(scrollToActiveMatch);
+                                            scope.$digest();
+                                        } else if (evt.which === 13 || evt.which === 32) { // Enter or Space Key
+                                            if (activeDataSet !== null) {
+                                                scope.$selectMatch(activeDataSet, dataSetSource.activeIndex, dataSetSource.matches[dataSetSource.activeIndex], evt);
+                                                scope.$apply();
+                                            }
+                                        } else if (evt.which === 27) { // Esc Key
+                                            scope.$clearTypeahead();
+                                            scope.$closePopup();
+                                            scope.$digest();
                                         }
-                                    } else if (evt.which === 27) { // Esc Key
-                                        scope.$clearTypeahead();
-                                        scope.$closePopup();
-                                        scope.$digest();
                                     }
                                 }
                             };
@@ -837,6 +845,41 @@
                                     }
                                 }
                             }
+
+                            function attachEventsToMatchedItems(element) {
+                                element
+                                    .on('mouseenter mouseleave mousedown', '.tg-typeahead__suggestions-group-item', function (evt) {
+                                        if (evt.target) {
+                                            var elScope = angular.element(evt.target).scope();
+
+                                            switch (evt.type) {
+                                                case 'mouseenter':
+                                                    scope.$setActiveMatch(elScope.$dataSet, elScope.$index);
+                                                    elScope.$digest();
+
+                                                    break;
+                                                case 'mouseleave':
+                                                    var dataSetSource = scope.getDataSetSource(elScope.$dataSet);
+
+                                                    if (dataSetSource) {
+                                                        dataSetSource.activeIndex = -1;
+                                                    }
+
+                                                    elScope.$digest();
+
+                                                    break;
+                                                case 'mousedown':
+                                                    if (!elScope.$match.disabled) {
+                                                        scope.$selectMatch(elScope.$dataSet, elScope.$index, elScope.$match, evt);
+                                                    }
+
+                                                    elScope.$apply();
+
+                                                    break;
+                                            }
+                                        }
+                                    });
+                            }
                         }
 
                         function postLink(scope, element, attrs, controllers) {
@@ -863,6 +906,10 @@
                                     style.width = element.innerWidth();
                                     style.boxSizing = 'border-box';
                                 }
+                            };
+
+                            scope.$isFocusedInput = function () {
+                                return inputElement && inputElement.is(":focus");
                             };
 
                             $http.get(scope.$templates.main, {cache: $templateCache})
@@ -1185,6 +1232,7 @@
                             maxSelectedTags = parseInt(tAttrs.tgTypeaheadMaxSelectedTags) || 0,
                             allowDuplicates = (tAttrs.tgTypeaheadAllowDuplicates === 'true'),
                             postponedSelection = (tAttrs.tgTypeaheadPostponedSelection === 'true'),
+                            ascendingOrder = (tAttrs.tgTypeaheadTagAscendingOrder === 'true'),
                             MatchModel = $injector.get('tgTypeaheadMatchModel'),
                             TagModel = $injector.get('tgTypeaheadTagModel');
 
@@ -1199,6 +1247,13 @@
                                 inputWrapElement = null;
 
                             scope.$tags = [];
+                            scope.$tagsOrder = function () {
+                                return 0;
+                            };
+
+                            if (ascendingOrder) {
+                                scope.$tagsOrder = ['match.value'];
+                            }
 
                             // Set Templates
                             scope.$templates.tagManager = tagManagerTpl;
@@ -1210,13 +1265,14 @@
                             };
 
                             scope.$addTag = function (tag) {
-                                if (tag && tag.match && !tag.match.selected && scope.$canAddTag()) {
+                                if (tag && tag.match && scope.$canAddTag()) {
                                     var evt = {
                                         context: scope.tgTypeaheadContext,
                                         tag: tag
                                     };
 
-                                    return tgTypeaheadCtrl.events.emit('onTagAdding', evt)
+                                    return tgTypeaheadCtrl.events
+                                        .emit('onTagAdding', evt)
                                         .then(function () {
                                             if (tag.dataSet) {
                                                 var model = scope.$getModel(),
@@ -1266,7 +1322,8 @@
                                         tag: tag
                                     };
 
-                                    return tgTypeaheadCtrl.events.emit('onTagRemoving', evt)
+                                    return tgTypeaheadCtrl.events
+                                        .emit('onTagRemoving', evt)
                                         .then(function () {
                                             if (tag.dataSet) {
                                                 var model = scope.$getModel(),
@@ -1315,7 +1372,7 @@
                             };
 
                             scope.$clearTags = function () {
-                                for (var i = 0, ln = scope.$tags.length; i < ln; i++) {
+                                for (var i = scope.$tags.length - 1; i >= 0; i--) {
                                     scope.$removeTag(scope.$tags[i]);
                                 }
                             };
@@ -1323,7 +1380,7 @@
                             scope.hasAllSelected = function (dataSet) {
                                 var dataSetSource = scope.getDataSetSource(dataSet);
 
-                                if (dataSetSource.matches.length > 0) {
+                                if (dataSetSource && dataSetSource.matches.length > 0) {
                                     for (var i = 0, ln = dataSetSource.matches.length; i < ln; i++) {
                                         if (!dataSetSource.matches[i].selected) {
                                             return false;
@@ -1345,11 +1402,13 @@
 
                                 var dataSetSource = scope.getDataSetSource(dataSet);
 
-                                dataSetSource.matches.forEach(function (match, index) {
-                                    if (!match.selected) {
-                                        scope.$selectMatch(dataSet, index, match, $event);
-                                    }
-                                });
+                                if (dataSetSource) {
+                                    dataSetSource.matches.forEach(function (match, index) {
+                                        if (!match.selected) {
+                                            scope.$selectMatch(dataSet, index, match, $event);
+                                        }
+                                    });
+                                }
                             };
 
                             scope.deselectAll = function (dataSet, $event) {
@@ -1361,29 +1420,41 @@
 
                                 var dataSetSource = scope.getDataSetSource(dataSet);
 
-                                dataSetSource.matches.forEach(function (match, index) {
-                                    if (match.selected) {
-                                        scope.$selectMatch(dataSet, index, match, $event);
-                                    }
-                                });
+                                if (dataSetSource) {
+                                    dataSetSource.matches.forEach(function (match, index) {
+                                        if (match.selected) {
+                                            scope.$selectMatch(dataSet, index, match, $event);
+                                        }
+                                    });
+                                }
                             };
 
                             scope.applySelections = function (dataSets) {
-                                for (var i = 0, ln = dataSets.length; i < ln; i++) {
-                                    var dataSet = dataSets[i];
+                                dataSets.forEach(function (dataSet) {
+                                    var dataSetSource = scope.getDataSetSource(dataSet);
 
-                                    if (dataSet.queried) {
-                                        var matches = dataSet.queried.matches;
+                                    if (dataSetSource) {
+                                        dataSetSource.matches.forEach(function (match) {
+                                            var tag = scope.$findTag(match);
 
-                                        for (var j = 0, lm = matches.length; j < lm; j++) {
-                                            if (matches[j].selected) {
-                                                var tag = new TagModel(matches[j], dataSet);
+                                            if (match.selected) {
+                                                if (tag === undefined) {
+                                                    tag = new TagModel(match, dataSet);
 
-                                                scope.$addTag(tag);
+                                                    scope.$addTag(tag);
+                                                }
+                                            } else {
+                                                var tag = scope.$findTag(match);
+
+                                                if (tag !== undefined) {
+                                                    scope.$removeTag(tag);
+                                                }
                                             }
-                                        }
+                                        });
                                     }
-                                }
+                                });
+
+                                scope.$closePopup();
                             };
 
                             /**
@@ -1403,8 +1474,10 @@
 
                             tgTypeaheadCtrl.$overrideFn('$onKeyDown', function (evt) {
                                 if (evt.which === 8 && scope.$term === null) {
-                                    if (scope.$tags.length > 0) {
-                                        scope.$removeTag(scope.$tags[scope.$tags.length - 1]);
+                                    if (scope.$isFocusedInput()) {
+                                        if (scope.$tags.length > 0) {
+                                            scope.$removeTag(scope.$tags[scope.$tags.length - 1]);
+                                        }
                                     }
                                 } else {
                                     this.$baseFn(evt);
@@ -1412,10 +1485,6 @@
                             });
 
                             tgTypeaheadCtrl.$overrideFn('$getPlaceholder', function () {
-                                if (scope.$tags.length > 0) {
-                                    return '';
-                                }
-
                                 return this.$baseFn();
                             });
 
@@ -1446,8 +1515,6 @@
                             });
 
                             tgTypeaheadCtrl.$overrideFn('$selectMatch', function (dataSet, index, match, $event) {
-                                scope.$clearTypeahead();
-
                                 var evt = {
                                     context: scope.tgTypeaheadContext,
                                     dataSet: dataSet,
