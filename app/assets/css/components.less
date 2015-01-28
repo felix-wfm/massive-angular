@@ -1,15 +1,14 @@
 @import "mixins.less";
+@grayDarker: #222222;
+@grayDark: #333333;
+@grayLight: #999999;
+@grayLighter: #eeeeee;
+@white: #ffffff;
 
-@grayDarker:            #222222;
-@grayDark:              #333333;
-@grayLight:             #999999;
-@grayLighter:           #eeeeee;
-@white:                 #ffffff;
+@errorBorder: #eb9795;
+@errorBorderFocus: #df4a48;
 
-@errorBorder:           #eb9795;
-@errorBorderFocus:      #df4a48;
-
-@dropdownBackground:    @white;
+@dropdownBackground: @white;
 
 .input-loader {
     width: 32px;
@@ -17,7 +16,6 @@
     position: absolute;
     background: ~"url('../img/loader-small.gif')" no-repeat center;
 }
-
 /* --------------------------------------- */
 /* - TG TYPEAHEAD                          */
 /* --------------------------------------- */
@@ -92,26 +90,35 @@
         margin: 0 3px 3px 0;
         background-color: #ecf6fa;
         line-height: 19px;
-        padding: 0 5px;
+        padding: 0 20px 0 5px;
         max-width: calc(~"100% - 20px");
-    }
 
-    .tg-typeahead__tag-name {
+        position: relative;
         text-overflow: ellipsis;
         overflow: hidden;
         white-space: nowrap;
-		display: inline-block;
-		max-width: calc(~"100% - 16px");
+    }
+
+    .tg-typeahead__tag-name {
+        // text-overflow: ellipsis;
+        // overflow: hidden;
+        // white-space: nowrap;
+        // display: inline-block;
+        // max-width: calc(~"100% - 16px");
     }
 
     .tg-typeahead__tag-remove {
-        margin-left: 5px;
-        color: #b1beca;
-        float: right;
-        line-height: 19px;
+        position: absolute;
+        right: 5px;
+        top: 0;
 
+        // margin-left: 5px;
+        // float: right;
+        color: #b1beca;
+        line-height: 19px;
         &:hover {
             color: #333;
+            cursor: pointer;
         }
     }
 
@@ -136,7 +143,9 @@
         white-space: nowrap;
     }
 }
+.tg-typeahead__footer-wrap {
 
+}
 .tg-typeahead__suggestions-wrap {
     .tg-typeahead__suggestions {
         position: absolute;
@@ -183,7 +192,7 @@
     }
 
     .tg-typeahead__suggestions-container {
-        max-height: 272px;
+        max-height: 300px;
         overflow-y: auto;
     }
 
@@ -242,7 +251,6 @@
         }
     }
 }
-
 .tg-typeahead__multiple-sources {
     .tg-typeahead__suggestions-container {
         max-height: 376px;
@@ -266,7 +274,6 @@
         }
     }
 }
-
 .ng-invalid[data-tg-typeahead],
 .ng-invalid[tg-typeahead] {
     div.tg-typeahead {
@@ -277,7 +284,6 @@
         }
     }
 }
-
 /* --------------------------------------- */
 /* - TG DROP DOWN                          */
 /* --------------------------------------- */
@@ -393,7 +399,6 @@
         }
     }
 }
-
 div.ng-invalid-required[data-tg-dropdown],
 div.ng-invalid-required[tg-dropdown] {
     div.tg-dropdown-button {
@@ -408,7 +413,6 @@ div.ng-invalid-required[tg-dropdown] {
         }
     }
 }
-
 /* --------------------------------------- */
 /* - TG DROP DOWN STAGE                    */
 /* --------------------------------------- */
@@ -427,7 +431,6 @@ div.ng-invalid-required[tg-dropdown] {
     list-style-type: none;
     z-index: 1000;
 }
-
 .tg-dropdown-stage-menu__item-wrap {
     .clearfix();
 
@@ -442,7 +445,6 @@ div.ng-invalid-required[tg-dropdown] {
         }
     }
 }
-
 .tg-dropdown-stage-menu__back,
 .tg-dropdown-stage-menu__forward,
 .tg-dropdown-stage-menu__check {
@@ -451,23 +453,19 @@ div.ng-invalid-required[tg-dropdown] {
     line-height: 25px;
     outline: none;
 }
-
 .tg-dropdown-stage-menu__back {
     float: left;
     padding: 0 5px 0 10px;
 }
-
 .tg-dropdown-stage-menu__forward {
     float: right;
     padding: 0 10px 0 5px;
 }
-
 .tg-dropdown-stage-menu__check {
     float: left;
     padding: 0 10px;
     visibility: hidden;
 }
-
 .tg-dropdown-stage-menu__item {
     overflow: hidden;
     cursor: pointer;
