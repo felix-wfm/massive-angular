@@ -181,9 +181,9 @@
                             scope.$templates = {
                                 main: {
                                     wrapper: new RenderTemplateModel('main.wrapper', attrs.tgTypeaheadTemplateUrl || 'tg-typeahead.tpl.html', $$renderCallback),
-                                    header: new RenderTemplateModel('main.header', attrs.tgTypeaheadHeaderTemplateUrl || 'tg-typeahead-header.tpl.html', $$renderCallback),
+                                    header: new RenderTemplateModel('main.header', attrs.tgTypeaheadHeaderTemplateUrl, $$renderCallback),
                                     container: new RenderTemplateModel('main.container', attrs.tgTypeaheadContainerTemplateUrl || 'tg-typeahead-container.tpl.html', $$renderCallback),
-                                    footer: new RenderTemplateModel('main.footer', attrs.tgTypeaheadFooterTemplateUrl || 'tg-typeahead-footer.tpl.html', $$renderCallback)
+                                    footer: new RenderTemplateModel('main.footer', attrs.tgTypeaheadFooterTemplateUrl, $$renderCallback)
                                 },
                                 popup: {
                                     wrapper: new RenderTemplateModel('popup.wrapper', attrs.tgTypeaheadPopupTemplateUrl || 'tg-typeahead-popup.tpl.html', $$renderCallback),
@@ -284,6 +284,16 @@
                                 if ($event) {
                                     $event.stopPropagation();
                                 }
+                            };
+
+                            scope.refreshModel = function (model) {
+                                scope.$clear();
+
+                                model = scope.$prepareModel(model);
+
+                                scope.$setModel(model, true);
+
+                                return model;
                             };
 
                             scope.$$findElementInTemplate = function (tpl, selector) {
@@ -685,6 +695,12 @@
                                 }
                             };
 
+                            scope.$watchModel = function () {
+                                scope.$watch(scope.$getModel, function (model) {
+                                    scope.refreshModel(model);
+                                });
+                            };
+
                             scope.$trigger = selfCtrl.trigger.bind(selfCtrl);
 
                             /*
@@ -954,13 +970,7 @@
                                 $document.off('keydown', onDocumentKeydown);
                             });
 
-                            scope.$watch(scope.$getModel, function (model) {
-                                scope.$clear();
-
-                                model = scope.$prepareModel(model);
-
-                                scope.$setModel(model, true);
-                            });
+                            scope.$watchModel();
                         }
 
                         return {
@@ -1027,6 +1037,10 @@
 
                         this.clear = function () {
                             $scope.$clearTypeahead();
+                        };
+
+                        this.refreshModel = function (model) {
+                            $scope.refreshModel(model);
                         };
 
                         $tgComponents.$addInstance(self);
@@ -1287,7 +1301,7 @@
                                             scope.$tags.push(tag);
 
                                             $timeout(function () {
-                                                $$updateTagManagerScrollPosition();
+                                                updateTagManagerScrollPosition();
                                             });
 
                                             tgTypeaheadCtrl.events.emit('onTagAdded', evt);
@@ -1537,6 +1551,12 @@
                                     });
                             });
 
+                            tgTypeaheadCtrl.$overrideFn('$watchModel', function () {
+                                scope.$watchCollection(scope.$getModel, function (model) {
+                                    scope.refreshModel(model);
+                                });
+                            });
+
                             tgTypeaheadCtrl.$overrideFn('$prepareDefaultModel', function () {
                                 var single = (scope.$dataSets.length === 1),
                                     multiple = (scope.$dataSets.length > 1),
@@ -1619,7 +1639,7 @@
                             });
 
                             tgTypeaheadCtrl.$overrideFn('$updateInputElement', function () {
-                                $$adjustInputElWidth();
+                                adjustInputElWidth();
 
                                 if (maxLines > 0) {
                                     if (scope.$tags.length > 1) {
@@ -1676,7 +1696,7 @@
                             /*
                              * private methods
                              */
-                            function $$adjustInputElWidth() {
+                            function adjustInputElWidth() {
                                 var inputContainerEl = scope.$$findElementInTemplate(scope.$templates.main.wrapper, '.tg-typeahead__input-container'),
                                     inputEl = scope.$$findElementInTemplate(scope.$templates.main.wrapper, '.tg-typeahead__input');
 
@@ -1718,7 +1738,7 @@
                                 }
                             }
 
-                            function $$updateTagManagerScrollPosition() {
+                            function updateTagManagerScrollPosition() {
                                 var tagManagerContainerEl = scope.$$findElementInTemplate(scope.$templates.tagManager.wrapper, '.tg-typeahead__tag-manager');
 
                                 if (tagManagerContainerEl) {
