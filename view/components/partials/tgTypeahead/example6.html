@@ -2,6 +2,7 @@
      tg-typeahead-placeholder="Search..."
      tg-typeahead-display-clean="true"
      tg-typeahead-tag-manager=""
+     tg-typeahead-max-lines="4"
      tg-typeahead-postponed-selection="true"
      tg-typeahead-tag-ascending-order="true"
      ng-model="__typeahead.model6">
@@ -37,7 +38,7 @@
         </div>
     </div>
     <div tg-typeahead-popup-footer="">
-        <div class="clearfix" style="padding: 5px 10px;"
+        <div class="tg-typeahead__suggestions-footer-border clearfix" style="padding: 10px;"
              ng-if="!$dataSet[0].data.noResults">
             <button class="pull-right"
                     ng-click="applySelections($dataSets);">Apply
