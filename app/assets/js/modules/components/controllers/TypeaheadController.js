@@ -26,6 +26,10 @@
             "name": "Madagascar"
         }];
 
+        $scope.comparator = function (matchA, matchB) {
+            return (matchA.code === matchB.code);
+        };
+
         $scope.control = {
             typeahead: {
                 attributes: [{
