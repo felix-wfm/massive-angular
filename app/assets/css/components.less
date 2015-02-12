@@ -477,3 +477,70 @@ div.ng-invalid-required[tg-dropdown] {
     text-overflow: ellipsis;
     white-space: nowrap;
 }
+/* --------------------------------------- */
+/* - TG TERRITORY                          */
+/* --------------------------------------- */
+.tg-territory {
+
+}
+.tg-territory__input-container {
+
+}
+.tg-territory__input {
+
+}
+.tg-territory__popup {
+    background: #f0f0f0;
+    border: 1px solid #e0dfdf;
+    padding: 5px;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+}
+.tg-territory__popup-header {
+
+}
+
+.tg-territory__popup-body {
+
+}
+.tg-territory__clusters {
+    .clearfix();
+}
+.tg-territory__cluster {
+    padding: 5px;
+    float: left;
+    width: 50%;
+
+    &:nth-of-type(even) {
+        float: right;
+    }
+}
+.tg-territory__cluster-inner {
+    background-color: #ffffff;
+}
+.tg-territory__cluster-header {
+    .clearfix();
+
+    cursor: pointer;
+    padding-right: 5px;
+}
+.tg-territory__cluster-countries {
+    .content-columns(2, 10px);
+    margin: 0;
+    padding: 0;
+}
+.tg-territory__cluster-country {
+    line-height: 25px;
+    border: 1px dashed transparent;
+    margin: 4px;
+    cursor: pointer;
+
+    &:hover {
+        border-color: #ccc;
+    }
+
+    &.m-active {
+        border: 1px solid #dddada;
+        background-color: #e9e8e8;
+    }
+}
