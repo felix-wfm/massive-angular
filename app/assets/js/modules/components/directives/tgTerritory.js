@@ -6,8 +6,17 @@
             $templateCache.put('tg-territory.tpl.html',
                 '<div class="tg-territory">\
                     <div class="tg-territory__input-container">\
-                        <input type="text" class="tg-territory__input" />\
-                        <button class="tg-territory__open-btn" ng-click="openPopup();">Q</button>\
+                        <div class="tg-territory__input"\
+                             tg-typeahead=""\
+                             tg-typeahead-tag-manager=""\
+                             ng-model="dataHolder.model">\
+                            <div tg-typeahead-data-set="cluster as cluster.title for cluster in dataHolder.source.countries | filter:{title:$viewValue}">\
+                                <div tg-typeahead-data-set-item="">\
+                                    <span>{{$match.data.title}}</span>\
+                                </div> \
+                            </div>\
+                        </div>\
+                        <button class="tg-territory__button" ng-click="openPopup();"></button>\
                     </div>\
                     <div class="tg-territory__popup" ng-if="stateHolder.popup.isOpen">\
                         <div class="tg-territory__popup-header"></div>\
@@ -58,9 +67,10 @@
                         function prepareSource(source) {
                             source = angular.copy(source);
 
-                            var countries = source.countries;
+                            var clusters = source.clusters,
+                                countries = source.countries;
 
-                            source.clusters.forEach(function (cluster) {
+                            clusters.forEach(function (cluster) {
                                 cluster._expanded = false;
                                 cluster._territories = [];
                                 cluster._selectedTerritoriesIds = [];
@@ -80,6 +90,8 @@
                                 });
                             });
 
+                            source.all = clusters.concat(countries);
+
                             console.log(source);
 
                             return source;
@@ -91,13 +103,19 @@
                                 ngModelCtrl = controllers[1];
 
                             scope.dataHolder = {
-                                source: prepareSource(scope.tgTerritorySource)
+                                source: prepareSource(scope.tgTerritorySource),
+                                model: []
                             };
 
                             scope.stateHolder = {
                                 popup: {
-                                    isOpen: false
+                                    isOpen: false,
+                                    dirty: false
                                 }
+                            };
+
+                            scope.getSource = function () {
+                                return scope.dataHolder.source.all;
                             };
 
                             scope.openPopup = function () {
@@ -105,6 +123,12 @@
                             };
 
                             scope.onOutsideClick = function () {
+                                if (scope.stateHolder.popup.isOpen && scope.stateHolder.popup.dirty) {
+                                    scope.stateHolder.popup.dirty = false;
+
+                                    updateModel();
+                                }
+
                                 scope.stateHolder.popup.isOpen = false;
                             };
 
@@ -117,6 +141,8 @@
                             };
 
                             scope.toggleTerritorySelection = function (cluster, territory) {
+                                scope.stateHolder.popup.dirty = true;
+
                                 territory._selected = !territory._selected;
 
                                 if (territory._selected) {
@@ -132,6 +158,8 @@
 
                             scope.toggleAllTerritoriesSelection = function (cluster, $event) {
                                 $event.stopPropagation();
+
+                                scope.stateHolder.popup.dirty = true;
 
                                 var selectedCount = cluster._selectedTerritoriesIds.length,
                                     selectState = (selectedCount !== cluster._territories.length);
@@ -158,6 +186,34 @@
 
                                 return 'fa-square-o';
                             };
+
+                            function updateModel() {
+                                scope.dataHolder.model.splice(0, scope.dataHolder.model.length);
+
+                                var source = scope.dataHolder.source;
+
+                                source.clusters.forEach(function (cluster) {
+                                    if (cluster._selectedTerritoriesIds.length > 0) {
+                                        if (cluster._selectedTerritoriesIds.length === cluster._territories.length) {
+                                            scope.dataHolder.model.push(cluster);
+                                        }
+                                    }
+                                });
+
+                                source.clusters.forEach(function (cluster) {
+                                    if (cluster._selectedTerritoriesIds.length > 0) {
+                                        if (cluster._selectedTerritoriesIds.length !== cluster._territories.length) {
+                                            cluster._territories.forEach(function (territory) {
+                                                if (territory._selected) {
+                                                    scope.dataHolder.model.push(territory);
+                                                }
+                                            });
+                                        }
+                                    }
+                                });
+                            }
+
+                            $setModelValue(parentScope, scope.dataHolder.model);
                         }
 
                         function postLink(scope, element, attrs, controllers) {

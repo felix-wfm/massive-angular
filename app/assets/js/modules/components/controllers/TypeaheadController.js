@@ -131,10 +131,6 @@
             return defer.promise;
         };
 
-        $scope.toJson = function (obj) {
-            return angular.toJson(obj, true);
-        };
-
         (function init() {
 
         })();

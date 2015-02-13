@@ -1508,7 +1508,7 @@ angular.module('app')
             };
 
             $scope.__territory = {
-                model1: null
+                model1: []
             };
 
             (function init() {
