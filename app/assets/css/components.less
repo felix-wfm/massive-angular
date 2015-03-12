@@ -532,12 +532,14 @@ div.ng-invalid-required[tg-dropdown] {
     cursor: pointer;
     padding-right: 5px;
 }
-.tg-territory__cluster-countries {
+.tg-territory__cluster-countries,
+.tg-territory__cluster-regions {
     .content-columns(2, 10px);
     margin: 0;
     padding: 0;
 }
-.tg-territory__cluster-country {
+.tg-territory__cluster-country,
+.tg-territory__cluster-region {
     line-height: 25px;
     border: 1px dashed transparent;
     margin: 4px;
@@ -551,4 +553,9 @@ div.ng-invalid-required[tg-dropdown] {
         border: 1px solid #dddada;
         background-color: #e9e8e8;
     }
+}
+.tg-territory__cluster-region-title {
+    border-top: 1px solid #bcbcbc;
+    margin: 0 6px 0;
+    color: #bcbcbc;
 }
