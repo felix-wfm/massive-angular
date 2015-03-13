@@ -52,7 +52,7 @@
                 '       <input type="text" class="tg-typeahead__input"' +
                 '              placeholder="{{ $getPlaceholder() }}"' +
                 '              ng-model="$term"' +
-                '              ng-disabled="$stateHolder.disabled">' +
+                '              ng-disabled="$isDisabled()">' +
                 '   </div>' +
                 '</div>');
 
@@ -128,7 +128,8 @@
                 '    <span class="tg-typeahead__tag-remove fa fa-times" rel="tooltip"' +
                 '       tooltip-placement="right"' +
                 '       tooltip-html-unsafe="delete"' +
-                '       ng-click="$removeTag($tag)"></span>' +
+                '       ng-class="{\'disabled\': $isDisabled()}"' +
+                '       ng-click="!$isDisabled() && $removeTag($tag)"></span>' +
                 '    <span class="tg-typeahead__tag-name" ng-bind-html="$tag.match.value | tgTrustedHtml"></span>' +
                 '</div>');
         }])
@@ -138,21 +139,14 @@
                     restrict: 'A',
                     require: ['tgTypeahead', '?ngModel'],
                     scope: {
-                        tgTypeahead: '@',
+                        tgTypeahead: '=?',
                         tgTypeaheadId: '@',
                         tgTypeaheadContext: '=',
-                        tgTypeaheadPlaceholder: '@',
-                        tgTypeaheadPopupAppendToBody: '@',
-                        tgTypeaheadPopupStrictWidth: '@',
                         tgTypeaheadWrapClass: '@',
-                        tgTypeaheadDisplayClean: '@',
-                        tgTypeaheadMinLength: '@',
-                        tgTypeaheadDelay: '@',
+                        tgTypeaheadDisabled: '=?',
                         tgTypeaheadSelected: '@'
                     },
                     priority: 4,
-                    transclude: true,
-                    template: '<div tg-typeahead-render-template="$templates.main.wrapper" ng-transclude=""></div>',
                     compile: function (tElement, tAttrs) {
                         var KEYBOARD_KEYS = [9, 13, 27, 32, 38, 40];
 
@@ -166,13 +160,133 @@
                             return (ref && ref.hasOwnProperty('then') && angular.isFunction(ref.then));
                         }
 
+                        function prepareOptions(obj, attrs) {
+                            var options = {};
+
+                            if (attrs.tgTypeaheadPlaceholder) {
+                                options.placeholder = attrs.tgTypeaheadPlaceholder;
+                            } else {
+                                options.placeholder = obj && obj.placeholder || '';
+                            }
+
+                            if (attrs.tgTypeaheadMinLength) {
+                                options.minLength = Math.abs(parseInt(attrs.tgTypeaheadMinLength))
+                            } else {
+                                options.minLength = obj && obj.minLength || 0;
+                            }
+
+                            if (attrs.tgTypeaheadDelay) {
+                                options.delay = Math.abs(parseInt(attrs.tgTypeaheadDelay))
+                            } else {
+                                options.delay = obj && obj.delay || 500;
+                            }
+
+                            if (attrs.tgTypeaheadPopupAppendToBody) {
+                                options.popupAppendToBody = (attrs.tgTypeaheadPopupAppendToBody === 'true');
+                            } else {
+                                options.popupAppendToBody = obj && obj.popupAppendToBody || false;
+                            }
+
+                            if (attrs.tgTypeaheadPopupStrictWidth) {
+                                options.popupStrictWidth = (attrs.tgTypeaheadPopupStrictWidth !== 'false');
+                            } else {
+                                options.popupStrictWidth = obj && obj.popupStrictWidth || true;
+                            }
+
+                            if (attrs.tgTypeaheadDisplayClean) {
+                                options.displayClean = (attrs.tgTypeaheadDisplayClean === 'true');
+                            } else {
+                                options.displayClean = obj && obj.displayClean || false;
+                            }
+
+                            if (attrs.tgTypeaheadTemplateUrl) {
+                                options.templateUrl = attrs.tgTypeaheadTemplateUrl;
+                            } else {
+                                options.templateUrl = obj && obj.templateUrl || 'tg-typeahead.tpl.html';
+                            }
+
+                            if (attrs.tgTypeaheadHeaderTemplateUrl) {
+                                options.headerTemplateUrl = attrs.tgTypeaheadHeaderTemplateUrl;
+                            } else {
+                                options.headerTemplateUrl = obj && obj.headerTemplateUrl || undefined;
+                            }
+
+                            if (attrs.tgTypeaheadContainerTemplateUrl) {
+                                options.containerTemplateUrl = attrs.tgTypeaheadContainerTemplateUrl;
+                            } else {
+                                options.containerTemplateUrl = obj && obj.containerTemplateUrl || 'tg-typeahead-container.tpl.html';
+                            }
+
+                            if (attrs.tgTypeaheadFooterTemplateUrl) {
+                                options.footerTemplateUrl = attrs.tgTypeaheadFooterTemplateUrl;
+                            } else {
+                                options.footerTemplateUrl = obj && obj.footerTemplateUrl || undefined;
+                            }
+
+                            if (attrs.tgTypeaheadPopupTemplateUrl) {
+                                options.popupTemplateUrl = attrs.tgTypeaheadPopupTemplateUrl;
+                            } else {
+                                options.popupTemplateUrl = obj && obj.popupTemplateUrl || 'tg-typeahead-popup.tpl.html';
+                            }
+
+                            if (attrs.tgTypeaheadPopupHeaderTemplateUrl) {
+                                options.popupHeaderTemplateUrl = attrs.tgTypeaheadPopupHeaderTemplateUrl;
+                            } else {
+                                options.popupHeaderTemplateUrl = obj && obj.popupHeaderTemplateUrl || undefined;
+                            }
+
+                            if (attrs.tgTypeaheadPopupFooterTemplateUrl) {
+                                options.popupFooterTemplateUrl = attrs.tgTypeaheadPopupFooterTemplateUrl;
+                            } else {
+                                options.popupFooterTemplateUrl = obj && obj.popupFooterTemplateUrl || undefined;
+                            }
+
+                            if (attrs.tgTypeaheadSuggestedPopupTemplateUrl) {
+                                options.suggestedPopupTemplateUrl = attrs.tgTypeaheadSuggestedPopupTemplateUrl;
+                            } else {
+                                options.suggestedPopupTemplateUrl = obj && obj.suggestedPopupTemplateUrl || 'tg-typeahead-suggested-popup.tpl.html';
+                            }
+
+                            if (attrs.tgTypeaheadSuggestedPopupHeaderTemplateUrl) {
+                                options.suggestedPopupHeaderTemplateUrl = attrs.tgTypeaheadSuggestedPopupHeaderTemplateUrl;
+                            } else {
+                                options.suggestedPopupHeaderTemplateUrl = obj && obj.suggestedPopupHeaderTemplateUrl || undefined;
+                            }
+
+                            if (attrs.tgTypeaheadSuggestedPopupFooterTemplateUrl) {
+                                options.suggestedPopupFooterTemplateUrl = attrs.tgTypeaheadSuggestedPopupFooterTemplateUrl;
+                            } else {
+                                options.suggestedPopupFooterTemplateUrl = obj && obj.suggestedPopupFooterTemplateUrl || undefined;
+                            }
+
+                            if (attrs.tgTypeaheadDataSetsHeaderTemplateUrl) {
+                                options.dataSetsHeaderTemplateUrl = attrs.tgTypeaheadDataSetsHeaderTemplateUrl;
+                            } else {
+                                options.dataSetsHeaderTemplateUrl = obj && obj.dataSetsHeaderTemplateUrl || undefined;
+                            }
+
+                            if (attrs.tgTypeaheadDataSetsItemTemplateUrl) {
+                                options.dataSetsItemTemplateUrl = attrs.tgTypeaheadDataSetsItemTemplateUrl;
+                            } else {
+                                options.dataSetsItemTemplateUrl = obj && obj.dataSetsItemTemplateUrl || 'tg-typeahead-dataSet-item.tpl.html';
+                            }
+
+                            if (attrs.tgTypeaheadDataSetsFooterTemplateUrl) {
+                                options.dataSetsFooterTemplateUrl = attrs.tgTypeaheadDataSetsFooterTemplateUrl;
+                            } else {
+                                options.dataSetsFooterTemplateUrl = obj && obj.dataSetsFooterTemplateUrl || undefined;
+                            }
+
+                            return options;
+                        }
+
                         function preLink(scope, element, attrs, controllers) {
                             var parentScope = scope.$external = scope.$parent,
                                 selfCtrl = controllers[0],
                                 ngModelCtrl = controllers[1],
-                                timeoutPromise,
-                                minLength = Math.abs(parseInt(scope.tgTypeaheadMinLength) || 0),
-                                delay = Math.abs(parseInt(scope.tgTypeaheadDelay) || 500);
+                                timeoutPromise;
+
+                            var options = prepareOptions(scope.tgTypeahead, attrs);
 
                             scope.selectedDataSet = null;
                             scope.$dataSets = [];
@@ -180,36 +294,36 @@
 
                             scope.$templates = {
                                 main: {
-                                    wrapper: new RenderTemplateModel('main.wrapper', attrs.tgTypeaheadTemplateUrl || 'tg-typeahead.tpl.html', $$renderCallback),
-                                    header: new RenderTemplateModel('main.header', attrs.tgTypeaheadHeaderTemplateUrl, $$renderCallback),
-                                    container: new RenderTemplateModel('main.container', attrs.tgTypeaheadContainerTemplateUrl || 'tg-typeahead-container.tpl.html', $$renderCallback),
-                                    footer: new RenderTemplateModel('main.footer', attrs.tgTypeaheadFooterTemplateUrl, $$renderCallback)
+                                    wrapper: new RenderTemplateModel('main.wrapper', options.templateUrl, renderCallback),
+                                    header: new RenderTemplateModel('main.header', options.headerTemplateUrl, renderCallback),
+                                    container: new RenderTemplateModel('main.container', options.containerTemplateUrl, renderCallback),
+                                    footer: new RenderTemplateModel('main.footer', options.footerTemplateUrl, renderCallback)
                                 },
                                 popup: {
-                                    wrapper: new RenderTemplateModel('popup.wrapper', attrs.tgTypeaheadPopupTemplateUrl || 'tg-typeahead-popup.tpl.html', $$renderCallback),
-                                    header: new RenderTemplateModel('popup.header', attrs.tgTypeaheadPopupHeaderTemplateUrl, $$renderCallback),
-                                    container: new RenderTemplateModel('popup.container', undefined, $$renderCallback),
-                                    footer: new RenderTemplateModel('popup.footer', attrs.tgTypeaheadPopupFooterTemplateUrl, $$renderCallback)
+                                    wrapper: new RenderTemplateModel('popup.wrapper', options.popupTemplateUrl, renderCallback),
+                                    header: new RenderTemplateModel('popup.header', options.popupHeaderTemplateUrl, renderCallback),
+                                    container: new RenderTemplateModel('popup.container', undefined, renderCallback),
+                                    footer: new RenderTemplateModel('popup.footer', options.popupFooterTemplateUrl, renderCallback)
                                 },
                                 suggestedPopup: {
-                                    wrapper: new RenderTemplateModel('suggestedPopup.wrapper', attrs.tgTypeaheadSuggestedPopupTemplateUrl || 'tg-typeahead-suggested-popup.tpl.html', $$renderCallback),
-                                    header: new RenderTemplateModel('suggestedPopup.header', attrs.tgTypeaheadSuggestedPopupHeaderTemplateUrl, $$renderCallback),
-                                    container: new RenderTemplateModel('suggestedPopup.container', undefined, $$renderCallback),
-                                    footer: new RenderTemplateModel('suggestedPopup.footer', attrs.tgTypeaheadSuggestedPopupFooterTemplateUrl, $$renderCallback)
+                                    wrapper: new RenderTemplateModel('suggestedPopup.wrapper', options.suggestedPopupTemplateUrl, renderCallback),
+                                    header: new RenderTemplateModel('suggestedPopup.header', options.suggestedPopupHeaderTemplateUrl, renderCallback),
+                                    container: new RenderTemplateModel('suggestedPopup.container', undefined, renderCallback),
+                                    footer: new RenderTemplateModel('suggestedPopup.footer', options.suggestedPopupFooterTemplateUrl, renderCallback)
                                 },
                                 dataSet: {
-                                    header: new RenderTemplateModel('dataSet.header', attrs.tgTypeaheadDataSetsHeaderTemplateUrl, $$renderCallback),
-                                    item: new RenderTemplateModel('dataSet.item', attrs.tgTypeaheadDataSetsItemTemplateUrl || 'tg-typeahead-dataSet-item.tpl.html', $$renderCallback),
-                                    footer: new RenderTemplateModel('dataSet.footer', attrs.tgTypeaheadDataSetsFooterTemplateUrl, $$renderCallback)
+                                    header: new RenderTemplateModel('dataSet.header', options.dataSetsHeaderTemplateUrl, renderCallback),
+                                    item: new RenderTemplateModel('dataSet.item', options.dataSetsItemTemplateUrl, renderCallback),
+                                    footer: new RenderTemplateModel('dataSet.footer', options.dataSetsFooterTemplateUrl, renderCallback)
                                 }
                             };
 
-                            if (scope.tgTypeaheadPopupAppendToBody === 'true') {
+                            if (options.popupAppendToBody) {
                                 scope.$templates.popup.wrapper.appendToBody = true;
                                 scope.$templates.suggestedPopup.wrapper.appendToBody = true;
                             }
 
-                            if (scope.tgTypeaheadPopupStrictWidth !== 'false') {
+                            if (options.popupStrictWidth) {
                                 scope.$templates.popup.wrapper.strictWidth = true;
                                 scope.$templates.suggestedPopup.wrapper.strictWidth = true;
                             }
@@ -275,7 +389,7 @@
                                     }
                                 }
 
-                                var popupContainer = scope.$$findElementInTemplate(scope.$templates.main.wrapper, '.tg-typeahead__suggestions-container');
+                                var popupContainer = scope.$findElementInTemplate(scope.$templates.main.wrapper, '.tg-typeahead__suggestions-container');
 
                                 if (popupContainer) {
                                     popupContainer.scrollTop();
@@ -296,7 +410,7 @@
                                 return model;
                             };
 
-                            scope.$$findElementInTemplate = function (tpl, selector) {
+                            scope.$findElementInTemplate = function (tpl, selector) {
                                 if (tpl && tpl.element && selector) {
                                     return tpl.element.find(selector);
                                 }
@@ -356,22 +470,26 @@
                                 popup.style = style;
                             };
 
+                            scope.$isDisabled = function () {
+                                return !!scope.tgTypeaheadDisabled || scope.$stateHolder.disabled;
+                            };
+
                             scope.$isVisibleInput = function () {
                                 return true;
                             };
 
                             scope.$isFocusedInput = function () {
-                                var inputEl = scope.$$findElementInTemplate(scope.$templates.main.wrapper, '.tg-typeahead__input');
+                                var inputEl = scope.$findElementInTemplate(scope.$templates.main.wrapper, '.tg-typeahead__input');
 
                                 return (inputEl && inputEl.is(":focus"));
                             };
 
                             scope.$getPlaceholder = function () {
-                                return scope.tgTypeaheadPlaceholder || '';
+                                return options.placeholder || '';
                             };
 
                             scope.$isVisibleClear = function () {
-                                return (scope.tgTypeaheadDisplayClean === 'true' && scope.$term);
+                                return (options.displayClean && scope.$term);
                             };
 
                             scope.$clear = function ($event) {
@@ -455,6 +573,13 @@
 
                                     clearCollectedPromises();
                                 }
+
+                                scope.$dataSets.forEach(function (dataSet) {
+                                    dataSet.queried.inProgress = false;
+                                    if (dataSet.suggested) {
+                                        dataSet.suggested.inProgress = false;
+                                    }
+                                });
                             };
 
                             scope.$clearTypeahead = function () {
@@ -478,7 +603,8 @@
                                     context: scope.tgTypeaheadContext,
                                     dataSet: dataSet,
                                     index: index,
-                                    match: match
+                                    match: match,
+                                    $internal: scope
                                 };
 
                                 selfCtrl.trigger('onMatchSelecting', evt)
@@ -582,6 +708,16 @@
 
                                 if ($setModelValue) {
                                     $setModelValue(parentScope, model);
+                                }
+                            };
+
+                            scope.$setModelDirty = function () {
+                                if (ngModelCtrl.$setDirty) {
+                                    ngModelCtrl.$setDirty(true); // Angular 1.3.3+
+
+                                } else {
+                                    ngModelCtrl.$setViewValue(ngModelCtrl.$viewValue);
+
                                 }
                             };
 
@@ -697,7 +833,10 @@
 
                             scope.$watchModel = function () {
                                 scope.$watch(scope.$getModel, function (model) {
-                                    scope.refreshModel(model);
+                                    if (model === undefined || !angular.equals(model, scope.$dataHolder.modelValue)) {
+                                        scope.refreshModel(model);
+                                    }
+
                                 });
                             };
 
@@ -730,6 +869,8 @@
                                         sourceMapper = sourceModel.source.sourceMapper,
                                         sourceResult = sourceMapper(parentScope, sourceLocals),
                                         promise = (isPromise(sourceResult)) ? sourceResult : $q.when(sourceResult);
+
+                                    sourceModel.inProgress = true;
 
                                     promise
                                         .then(function (response) {
@@ -833,12 +974,12 @@
                                 }
 
                                 if (tpl) {
-                                    var popupContainer = scope.$$findElementInTemplate(tpl, '.tg-typeahead__suggestions-container'),
+                                    var popupContainer = scope.$findElementInTemplate(tpl, '.tg-typeahead__suggestions-container'),
                                         _popupContainer = popupContainer.get(0);
 
                                     if (_popupContainer) {
                                         if (_popupContainer.clientHeight < _popupContainer.scrollHeight) {
-                                            var activeItem = scope.$$findElementInTemplate(tpl, '.tg-typeahead__suggestions-group-item.active'),
+                                            var activeItem = scope.$findElementInTemplate(tpl, '.tg-typeahead__suggestions-group-item.active'),
                                                 _activeItem = activeItem.get(0);
 
                                             if (_activeItem) {
@@ -891,12 +1032,12 @@
                                     });
                             }
 
-                            function $$renderCallback(tpl) {
+                            function renderCallback(tpl) {
                                 selfCtrl.trigger('onTemplateInit', {template: tpl});
 
                                 switch (tpl.name) {
                                     case 'main.container':
-                                        $$renderMainContainer(tpl);
+                                        renderMainContainer(tpl);
                                         break;
                                     case 'popup.wrapper':
                                     case 'suggestedPopup.wrapper':
@@ -905,8 +1046,8 @@
                                 }
                             }
 
-                            function $$renderMainContainer(tpl) {
-                                var inputEl = scope.$$findElementInTemplate(scope.$templates.main.wrapper, '.tg-typeahead__input');
+                            function renderMainContainer(tpl) {
+                                var inputEl = scope.$findElementInTemplate(scope.$templates.main.wrapper, '.tg-typeahead__input');
 
                                 inputEl.on('click', function () {
                                     var isOpenedPopup = scope.$stateHolder.popup.opened;
@@ -931,12 +1072,12 @@
 
                                     scope.$applyMatch(null, null);
 
-                                    if (val.length >= minLength) {
+                                    if (val.length >= options.minLength) {
                                         timeoutPromise = $timeout(function () {
                                             if (scope.$term) {
                                                 scope.$resolveSources(val);
                                             }
-                                        }, delay);
+                                        }, options.delay);
                                     }
 
                                     return val;
@@ -945,6 +1086,8 @@
                         }
 
                         function postLink(scope, element, attrs, controllers) {
+                            element.append($compile('<div tg-typeahead-render-template="$templates.main.wrapper"></div>')(scope));
+
                             var onDocumentClick = function (evt) {
                                 if (element.has(evt.target).length === 0) {
                                     var popup = scope.$templates.popup.wrapper.element,
@@ -966,6 +1109,18 @@
                             $document.on('keydown', onDocumentKeydown);
 
                             scope.$on('$destroy', function () {
+                                scope.$onOutsideClick();
+
+                                angular.forEach(scope.$templates, function (tplType) {
+                                    if (tplType) {
+                                        angular.forEach(tplType, function (tpl) {
+                                            if (tpl && tpl.appendToBody && tpl.element) {
+                                                tpl.element.remove();
+                                            }
+                                        });
+                                    }
+                                });
+
                                 $document.off('click', onDocumentClick);
                                 $document.off('keydown', onDocumentKeydown);
                             });
@@ -1062,19 +1217,21 @@
                         tgTypeaheadDataSetName: '@',
                         tgTypeaheadDataSetLimitStep: '@',
                         tgTypeaheadDataSetDisplayedItems: '@',
-                        tgTypeaheadDataSetSuggested: '@'
+                        tgTypeaheadDataSetSuggested: '@',
+                        tgTypeaheadDataSetComparator: '&'
                     },
                     compile: function (tElement, tAttrs) {
                         var SOURCE_EXPR = /^\s*(.*?)(?:\s+as\s+(.*?))?\s+for\s+(?:([\$\w][\$\w\d]*))\s+in\s+(.*)$/;
 
-                        function sourceExprParse(input) {
-                            var match = input.match(SOURCE_EXPR);
+                        function sourceExprParse(expression) {
+                            var match = expression.match(SOURCE_EXPR);
 
                             if (!match) {
-                                throw new Error("Expected typeahead specification in form of '_modelValue_ (as _label_)? for _item_ in _collection_' but got '" + input + "'.");
+                                throw new Error("Expected typeahead specification in form of '_modelValue_ (as _label_)? for _item_ in _collection_' but got '" + expression + "'.");
                             }
 
                             return {
+                                expression: expression,
                                 itemName: match[3],
                                 sourceMapper: $parse(match[4]),
                                 viewMapper: $parse(match[2] || match[1]),
@@ -1086,30 +1243,38 @@
                             var limitStep = parseInt(scope.tgTypeaheadDataSetLimitStep) || 9999,
                                 displayedItems = parseInt(scope.tgTypeaheadDataSetDisplayedItems) || limitStep,
                                 querySource = sourceExprParse(scope.tgTypeaheadDataSet),
-                                suggestSource,
+                                DataSetModel = $injector.get('tgTypeaheadDataSetModel'),
                                 RenderTemplateModel = $injector.get('tgTypeaheadRenderTemplateModel'),
                                 SourceModel = $injector.get('tgTypeaheadSourceModel');
 
+                            var name = scope.tgTypeaheadDataSetName || ('dataSet_' + scope.$id);
+
+                            scope.$dataSet = new DataSetModel(name);
+
+                            scope.$dataSet.templates = {
+                                header: new RenderTemplateModel('dataSet.header', attrs.tgTypeaheadDataSetHeaderTemplateUrl),
+                                item: new RenderTemplateModel('dataSet.item', attrs.tgTypeaheadDataSetItemTemplateUrl),
+                                footer: new RenderTemplateModel('dataSet.footer', attrs.tgTypeaheadDataSetFooterTemplateUrl)
+                            };
+
+                            scope.$dataSet.queried = new SourceModel(querySource, displayedItems, limitStep);
+
                             if (scope.tgTypeaheadDataSetSuggested) {
-                                suggestSource = {
+                                var suggestSource = {
                                     itemName: querySource.itemName,
                                     sourceMapper: $parse(scope.tgTypeaheadDataSetSuggested),
                                     viewMapper: querySource.viewMapper,
                                     modelMapper: querySource.modelMapper
                                 };
+
+                                scope.$dataSet.suggested = new SourceModel(suggestSource, displayedItems, limitStep);
                             }
 
-                            scope.$dataSet = {
-                                name: scope.tgTypeaheadDataSetName || ('dataSet_' + scope.$id),
-                                data: undefined,
-                                templates: {
-                                    header: new RenderTemplateModel('dataSet.header', attrs.tgTypeaheadDataSetHeaderTemplateUrl),
-                                    item: new RenderTemplateModel('dataSet.item', attrs.tgTypeaheadDataSetItemTemplateUrl),
-                                    footer: new RenderTemplateModel('dataSet.footer', attrs.tgTypeaheadDataSetFooterTemplateUrl)
-                                },
-                                queried: new SourceModel(querySource, displayedItems, limitStep),
-                                suggested: (suggestSource) ? (new SourceModel(suggestSource, displayedItems, limitStep)) : undefined
-                            };
+                            var comparator = scope.tgTypeaheadDataSetComparator();
+
+                            if (angular.isFunction(comparator)) {
+                                scope.$dataSet.comparator = comparator;
+                            }
 
                             tgTypeaheadCtrl.$addDataSet(scope.$dataSet);
                         }
@@ -1216,56 +1381,124 @@
                 };
             }
         ])
-        .directive('tgTypeaheadTagManager', ['$injector', '$http', '$compile', '$parse', '$templateCache', '$q', '$timeout',
-            function ($injector, $http, $compile, $parse, $templateCache, $q, $timeout) {
+        .directive('tgTypeaheadTagManager', ['$injector', '$parse', '$q', '$timeout',
+            function ($injector, $parse, $q, $timeout) {
                 return {
                     restrict: 'A',
                     require: ['tgTypeahead', '?ngModel'],
                     scope: false,
                     priority: 3,
                     compile: function (tElement, tAttrs) {
-                        var maxLines = Math.abs(parseInt(tAttrs.tgTypeaheadMaxLines) || 0),
-                            maxSelectedTags = Math.abs(parseInt(tAttrs.tgTypeaheadMaxSelectedTags) || 0),
-                            allowDuplicates = (tAttrs.tgTypeaheadAllowDuplicates === 'true'),
-                            postponedSelection = (tAttrs.tgTypeaheadPostponedSelection === 'true'),
-                            ascendingOrder = (tAttrs.tgTypeaheadTagAscendingOrder === 'true'),
-                            RenderTemplateModel = $injector.get('tgTypeaheadRenderTemplateModel'),
+                        var RenderTemplateModel = $injector.get('tgTypeaheadRenderTemplateModel'),
                             MatchModel = $injector.get('tgTypeaheadMatchModel'),
                             TagModel = $injector.get('tgTypeaheadTagModel');
 
+                        function prepareOptions(obj, scope, attrs) {
+                            var options = {};
+
+                            if (attrs.tgTypeaheadAllowDuplicates) {
+                                options.allowDuplicates = (attrs.tgTypeaheadAllowDuplicates === 'true');
+                            } else {
+                                options.allowDuplicates = obj && obj.allowDuplicates || false;
+                            }
+
+                            if (attrs.tgTypeaheadPostponedSelection) {
+                                options.postponedSelection = (attrs.tgTypeaheadPostponedSelection === 'true');
+                            } else {
+                                options.postponedSelection = obj && obj.postponedSelection || false;
+                            }
+
+                            if (attrs.tgTypeaheadTagOrderBy) {
+                                options.orderBy = $parse(attrs.tgTypeaheadTagOrderBy)(scope);
+                            } else {
+                                options.orderBy = obj && obj.orderBy || ['match.value'];
+                            }
+
+                            if (attrs.tgTypeaheadTagAscendingOrder) {
+                                options.ascendingOrder = (attrs.tgTypeaheadTagAscendingOrder === 'true');
+                            } else {
+                                options.ascendingOrder = obj && obj.ascendingOrder || false;
+                            }
+
+                            if (attrs.tgTypeaheadMaxLines) {
+                                options.maxLines = Math.abs(parseInt(attrs.tgTypeaheadMaxLines))
+                            } else {
+                                options.maxLines = obj && obj.maxLines || 0;
+                            }
+
+                            if (attrs.tgTypeaheadMaxSelectedTags) {
+                                options.maxSelectedTags = Math.abs(parseInt(attrs.tgTypeaheadMaxSelectedTags))
+                            } else {
+                                options.maxSelectedTags = obj && obj.maxSelectedTags || 0;
+                            }
+
+                            if (attrs.tgTypeaheadDisplayClean) {
+                                options.displayClean = (attrs.tgTypeaheadDisplayClean === 'true');
+                            } else {
+                                options.displayClean = obj && obj.displayClean || false;
+                            }
+
+                            if (attrs.tgTypeaheadTagManagerTemplateUrl) {
+                                options.tagManagerTemplateUrl = attrs.tgTypeaheadTagManagerTemplateUrl;
+                            } else {
+                                options.tagManagerTemplateUrl = obj && obj.tagManagerTemplateUrl || 'tg-typeahead-tag-manager.tpl.html';
+                            }
+
+                            if (attrs.tgTypeaheadTagTemplateUrl) {
+                                options.tagTemplateUrl = attrs.tgTypeaheadTagTemplateUrl;
+                            } else {
+                                options.tagTemplateUrl = obj && obj.tagTemplateUrl || 'tg-typeahead-tag.tpl.html';
+                            }
+
+                            return options;
+                        }
+
                         function preLink(scope, element, attrs, controllers) {
                             var tgTypeaheadCtrl = controllers[0],
-                                ngModelCtrl = controllers[1];
+                                ngModelCtrl = controllers[1],
+                                uspTimeoutPromise;
 
                             scope = tgTypeaheadCtrl.$scope;
+
+                            var parentScope = scope.$parent;
+
+                            var options = prepareOptions($parse(attrs.tgTypeaheadTagManager)(parentScope), parentScope, attrs);
 
                             scope.$tags = [];
                             scope.$tagsOrder = function () {
                                 return 0;
                             };
 
-                            if (ascendingOrder) {
+                            if (options.orderBy) {
+                                scope.$tagsOrder = options.orderBy;
+                            } else if (options.ascendingOrder) {
                                 scope.$tagsOrder = ['match.value'];
                             }
 
                             // Set Templates
                             scope.$templates.tagManager = {
-                                wrapper: new RenderTemplateModel('tagManager.wrapper', attrs.tgTypeaheadTagManagerTemplateUrl || 'tg-typeahead-tag-manager.tpl.html'),
-                                tag: new RenderTemplateModel('tagManager.tag', attrs.tgTypeaheadTagTemplateUrl || 'tg-typeahead-tag.tpl.html')
+                                wrapper: new RenderTemplateModel('tagManager.wrapper', options.tagManagerTemplateUrl),
+                                tag: new RenderTemplateModel('tagManager.tag', options.tagTemplateUrl)
                             };
 
                             scope.$templates.main.header = scope.$templates.tagManager.wrapper;
 
+                            scope.$eventHolder = angular.extend(scope.$eventHolder || {}, {
+                                onTagSelected: $parse(attrs.tgTypeaheadTagSelected),
+                                onTagDeselected: $parse(attrs.tgTypeaheadTagDeselected)
+                            });
+
                             // internal functionality
                             scope.$canAddTag = function () {
-                                return (maxSelectedTags === 0 || maxSelectedTags > scope.$tags.length);
+                                return (options.maxSelectedTags === 0 || options.maxSelectedTags > scope.$tags.length);
                             };
 
                             scope.$addTag = function (tag) {
                                 if (tag && tag.match && scope.$canAddTag()) {
                                     var evt = {
                                         context: scope.tgTypeaheadContext,
-                                        tag: tag
+                                        tag: tag,
+                                        $internal: scope
                                     };
 
                                     return tgTypeaheadCtrl.events
@@ -1282,10 +1515,10 @@
 
                                                     var idx = -1;
 
-                                                    if (!allowDuplicates) {
+                                                    if (!options.allowDuplicates) {
                                                         // check if match model already exist in model
                                                         for (var i = 0, ln = src.length; i < ln; i++) {
-                                                            if (angular.equals(src[i], tag.match.model)) {
+                                                            if (tag.dataSet.comparator(src[i], tag.match.model)) {
                                                                 idx = i;
                                                                 break;
                                                             }
@@ -1294,17 +1527,24 @@
 
                                                     if (idx === -1) {
                                                         src.push(tag.match.model);
+                                                        scope.$setModelDirty();
                                                     }
                                                 }
                                             }
 
                                             scope.$tags.push(tag);
 
-                                            $timeout(function () {
+                                            if (uspTimeoutPromise) {
+                                                $timeout.cancel(uspTimeoutPromise);
+                                            }
+
+                                            uspTimeoutPromise = $timeout(function () {
                                                 updateTagManagerScrollPosition();
-                                            });
+                                            }, 50);
 
                                             tgTypeaheadCtrl.events.emit('onTagAdded', evt);
+
+                                            scope.$eventHolder.onTagSelected(parentScope, evt);
 
                                             return tag;
                                         });
@@ -1320,7 +1560,8 @@
                                     var evt = {
                                         context: scope.tgTypeaheadContext,
                                         index: idx,
-                                        tag: tag
+                                        tag: tag,
+                                        $internal: scope
                                     };
 
                                     return tgTypeaheadCtrl.events
@@ -1339,7 +1580,7 @@
 
                                                     // check if match model already exist in model
                                                     for (var i = 0, ln = src.length; i < ln; i++) {
-                                                        if (angular.equals(src[i], tag.match.model)) {
+                                                        if (tag.dataSet.comparator(src[i], tag.match.model)) {
                                                             idx = i;
                                                             break;
                                                         }
@@ -1347,6 +1588,7 @@
 
                                                     if (idx !== -1) {
                                                         src.splice(idx, 1);
+                                                        scope.$setModelDirty();
                                                     }
                                                 }
                                             }
@@ -1355,8 +1597,8 @@
 
                                             if (idx !== -1) {
                                                 scope.$tags.splice(idx, 1);
-
                                                 tgTypeaheadCtrl.events.emit('onTagRemoved', evt);
+                                                scope.$eventHolder.onTagDeselected(parentScope, evt);
                                             }
                                         });
                                 }
@@ -1366,8 +1608,10 @@
 
                             scope.$findTag = function (match) {
                                 for (var i = 0, ln = scope.$tags.length; i < ln; i++) {
-                                    if (angular.equals(scope.$tags[i].match.model, match.model)) {
-                                        return scope.$tags[i];
+                                    var tag = scope.$tags[i];
+
+                                    if (tag.dataSet.comparator(tag.match.model, match.model)) {
+                                        return tag;
                                     }
                                 }
                             };
@@ -1440,7 +1684,7 @@
 
                                             if (match.selected) {
                                                 if (tag === undefined) {
-                                                    tag = new TagModel(match, {name: dataSet.name});
+                                                    tag = new TagModel(match, dataSet.build());
 
                                                     scope.$addTag(tag);
                                                 }
@@ -1493,7 +1737,7 @@
                                 var result = this.$baseFn();
 
                                 if (result) {
-                                    if (maxSelectedTags > 0 && maxSelectedTags <= scope.$tags.length) {
+                                    if (options.maxSelectedTags > 0 && options.maxSelectedTags <= scope.$tags.length) {
                                         result = false;
                                     }
                                 }
@@ -1506,7 +1750,7 @@
                             });
 
                             tgTypeaheadCtrl.$overrideFn('$isVisibleClear', function () {
-                                return (attrs.tgTypeaheadDisplayClean === 'true' && scope.$tags.length > 1);
+                                return (options.displayClean && scope.$tags.length > 1);
                             });
 
                             tgTypeaheadCtrl.$overrideFn('$clear', function ($event) {
@@ -1525,12 +1769,12 @@
 
                                 tgTypeaheadCtrl.trigger('onMatchSelecting', evt)
                                     .then(function () {
-                                        if (!postponedSelection) {
+                                        if (!options.postponedSelection) {
                                             var tag = scope.$findTag(match);
 
                                             // multi selection: select / deselect
-                                            if (tag === undefined || allowDuplicates) {
-                                                tag = new TagModel(match, {name: dataSet.name});
+                                            if (tag === undefined || options.allowDuplicates) {
+                                                tag = new TagModel(match, dataSet.build());
 
                                                 scope.$addTag(tag);
 
@@ -1544,7 +1788,7 @@
                                             match.selected = !match.selected;
                                         }
 
-                                        if (!postponedSelection &&
+                                        if (!options.postponedSelection &&
                                             (!$event || !($event.ctrlKey | $event.metaKey))) {
                                             scope.$onOutsideClick();
                                         }
@@ -1552,8 +1796,10 @@
                             });
 
                             tgTypeaheadCtrl.$overrideFn('$watchModel', function () {
-                                scope.$watchCollection(scope.$getModel, function (model) {
-                                    scope.refreshModel(model);
+                                scope.$watchCollection(scope.$getModel, function (model, oldValue) {
+                                    //if (model === undefined || !angular.equals(model, scope.$dataHolder.modelValue)) {
+                                        scope.refreshModel(model);
+                                    //}
                                 });
                             });
 
@@ -1618,7 +1864,7 @@
                                         activeSource.source.forEach(function (match) {
                                             var item = sourceModel.$getItem(match, scope.$parent),
                                                 match = new MatchModel(match, item.model, item.value),
-                                                tag = new TagModel(match, {name: dataSet.name});
+                                                tag = new TagModel(match, dataSet.build());
 
                                             scope.$addTag(tag);
                                         });
@@ -1629,7 +1875,7 @@
                             });
 
                             tgTypeaheadCtrl.$overrideFn('$prepareMatchModel', function (matchModel, dataSet) {
-                                if (!allowDuplicates && scope.$tags.length > 0) {
+                                if (!options.allowDuplicates && scope.$tags.length > 0) {
                                     var tag = scope.$findTag(matchModel);
 
                                     if (tag !== undefined) {
@@ -1641,11 +1887,11 @@
                             tgTypeaheadCtrl.$overrideFn('$updateInputElement', function () {
                                 adjustInputElWidth();
 
-                                if (maxLines > 0) {
+                                if (options.maxLines > 0) {
                                     if (scope.$tags.length > 1) {
                                         scope.$templates.tagManager.wrapper.class = 'clearfix';
                                         scope.$templates.tagManager.wrapper.style = {
-                                            'max-height': (22 * maxLines) + 'px',
+                                            'max-height': (22 * options.maxLines) + 'px',
                                             'overflow-y': 'auto'
                                         };
                                     } else {
@@ -1669,7 +1915,7 @@
                             };
 
                             tgTypeaheadCtrl.addTag = function (match, dataSet) {
-                                var tag = new TagModel(match, {name: dataSet.name});
+                                var tag = new TagModel(match, dataSet.build());
 
                                 return scope.$addTag(tag);
                             };
@@ -1685,20 +1931,28 @@
                             /**
                              * watches
                              */
-                            scope.$watchCollection('$tags', function (tags) {
-                                if (attrs.required) {
-                                    $timeout(function () {
-                                        ngModelCtrl.$setValidity('tagsRequired', (tags.length !== 0));
-                                    });
-                                }
+                            scope.$watchCollection('$tags', function () {
+                                updateValidity();
+                            });
+
+                            attrs.$observe('required', function () {
+                                updateValidity();
                             });
 
                             /*
                              * private methods
                              */
+                            function updateValidity() {
+                                if (attrs.required) {
+                                    $timeout(function () {
+                                        ngModelCtrl.$setValidity('tagsRequired', (scope.$tags.length !== 0));
+                                    });
+                                }
+                            }
+
                             function adjustInputElWidth() {
-                                var inputContainerEl = scope.$$findElementInTemplate(scope.$templates.main.wrapper, '.tg-typeahead__input-container'),
-                                    inputEl = scope.$$findElementInTemplate(scope.$templates.main.wrapper, '.tg-typeahead__input');
+                                var inputContainerEl = scope.$findElementInTemplate(scope.$templates.main.wrapper, '.tg-typeahead__input-container'),
+                                    inputEl = scope.$findElementInTemplate(scope.$templates.main.wrapper, '.tg-typeahead__input');
 
                                 if (inputContainerEl && inputEl) {
                                     if (scope.$tags.length === 1) {
@@ -1707,7 +1961,7 @@
                                                 var bottomRowWidth = 0,
                                                     tagEl, tagWidth;
 
-                                                scope.$$findElementInTemplate(scope.$templates.tagManager.wrapper, '.tg-typeahead__tag')
+                                                scope.$findElementInTemplate(scope.$templates.tagManager.wrapper, '.tg-typeahead__tag')
                                                     .each(function () {
                                                         tagEl = angular.element(this);
                                                         tagWidth = tagEl.outerWidth() + parseInt(tagEl.css('margin-left')) + parseInt(tagEl.css('margin-right'));
@@ -1739,7 +1993,7 @@
                             }
 
                             function updateTagManagerScrollPosition() {
-                                var tagManagerContainerEl = scope.$$findElementInTemplate(scope.$templates.tagManager.wrapper, '.tg-typeahead__tag-manager');
+                                var tagManagerContainerEl = scope.$findElementInTemplate(scope.$templates.tagManager.wrapper, '.tg-typeahead__tag-manager');
 
                                 if (tagManagerContainerEl) {
                                     var _tagManagerContainerEl = tagManagerContainerEl.get(0);
@@ -1786,6 +2040,27 @@
 
             return RenderTemplateModelFactory;
         }])
+        .factory('tgTypeaheadDataSetModel', [function () {
+            function DataSetModelFactory(name) {
+                this.name = name;
+                this.data = undefined;
+                this.templates = undefined;
+                this.queried = undefined;
+                this.suggested = undefined;
+                this.comparator = function (matchA, matchB) {
+                    return angular.equals(matchA, matchB);
+                };
+            }
+
+            DataSetModelFactory.prototype.build = function () {
+                return {
+                    name: this.name,
+                    comparator: this.comparator
+                };
+            };
+
+            return DataSetModelFactory;
+        }])
         .factory('tgTypeaheadSourceModel', [function () {
             function SourceModelFactory(source, displayedItems, limitStep) {
                 this.source = source;
@@ -1795,6 +2070,7 @@
                 this.limit = displayedItems;
                 this.active = true;
                 this.activeIndex = -1;
+                this.inProgress = false;
             }
 
             SourceModelFactory.prototype.$hasMore = function () {
@@ -1881,14 +2157,5 @@
             }
 
             return TagModelFactory;
-        }])
-        .factory('tgTypeaheadFilterTagModel', [function () {
-            function FilterTagModelFactory(match) {
-                this.match = match;
-                this.filter = undefined;
-                this.filters = [];
-            }
-
-            return FilterTagModelFactory;
         }]);
 })();

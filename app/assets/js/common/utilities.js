@@ -1,59 +1,111 @@
-angular.module('app')
-	.factory('utilities', [
-		function () {
-			'use strict';
+(function () {
+    'use strict';
 
-			function each(obj, fn) {
-				var result;
+    angular.module('tg.components')
+        .factory('utilities', Utilities);
 
-				if (angular.isArray(obj)) {
-					for (var i = 0, n = obj.length; i < n; i++) {
-						result = fn(obj[i], i, obj);
+    Utilities.$inject = [];
 
-						if (result !== undefined) {
-							return result;
-						}
-					}
-				} else if (angular.isObject(obj)) {
-					for (var key in obj) {
-						result = fn(obj[key], key, obj);
+    function Utilities() {
+        function isType(obj, typeStr) {
+            return (Object.prototype.toString.call(obj) === typeStr);
+        }
 
-						if (result !== undefined) {
-							return result;
-						}
-					}
-				}
-			}
+        function isObject(obj) {
+            return isType(obj, '[object Object]');
+        }
 
-			function select(obj, fnProp, unique) {
-				var result = [];
+        function isArray(obj) {
+            return isType(obj, '[object Array]');
+        }
 
-				this.each(obj, function (val, key) {
-					var r = fnProp(val, key, obj);
+        function isFunction(obj) {
+            return isType(obj, '[object Function]');
+        }
 
-					if (r !== undefined) {
-						if (!unique || result.indexOf(r) === -1) {
-							result.push(r);
-						}
-					}
-				});
+        function forEach(obj, fn) {
+            if (obj && isFunction(fn)) {
+                if (isArray(obj)) {
+                    for (var i = 0, n = obj.length; i < n; i++) {
+                        fn(obj[i], i, obj);
+                    }
+                } else if (isObject(obj)) {
+                    for (var key in obj) {
+                        if (obj.hasOwnProperty(key)) {
+                            fn(obj[key], key, obj);
+                        }
+                    }
+                }
+            }
+        }
 
-				return result;
-			}
+        function each(obj, fn) {
+            if (obj && isFunction(fn)) {
+                var result;
 
-			function empty(arr) {
-				return (!arr || arr.length === 0);
-			}
+                if (isArray(obj)) {
+                    for (var i = 0, n = obj.length; i < n; i++) {
+                        result = fn(obj[i], i, obj);
 
-			function has(arr, val) {
-				return (arr && arr.indexOf(val) > -1);
-			}
+                        if (result !== undefined) {
+                            return result;
+                        }
+                    }
+                } else if (isObject(obj)) {
+                    for (var key in obj) {
+                        if (obj.hasOwnProperty(key)) {
+                            result = fn(obj[key], key, obj);
 
-			return {
-				each: each,
-				select: select,
-				empty: empty,
-				has: has
-			};
-		}
-	]);
+                            if (result !== undefined) {
+                                return result;
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        function select(obj, fnProp, unique) {
+            var result = [];
+
+            each(obj, function (val, key) {
+                var r = fnProp(val, key, obj);
+
+                if (r !== undefined) {
+                    if (isArray(r)) {
+                        r.forEach(function (rs) {
+                            if (!unique || result.indexOf(rs) === -1) {
+                                result.push(rs);
+                            }
+                        });
+                    } else {
+                        if (!unique || result.indexOf(r) === -1) {
+                            result.push(r);
+                        }
+                    }
+                }
+            });
+
+            return result;
+        }
+
+        function empty(arr) {
+            return (!isArray(arr) || arr.length === 0);
+        }
+
+        function has(arr, val) {
+            return (!empty(arr) && arr.indexOf(val) > -1);
+        }
+
+        return {
+            isObject: isObject,
+            isArray: isArray,
+            isFunction: isFunction,
+            forEach: forEach,
+            each: each,
+            select: select,
+            empty: empty,
+            has: has
+        };
+    }
+})();
