@@ -9,8 +9,9 @@
                         <div class="tg-territory__input"\
                              tg-typeahead=""\
                              tg-typeahead-tag-manager=""\
-                             tg-typeahead-tag-selected="onTagSelected(tag);"\
-                             tg-typeahead-tag-deselected="onTagDeselected(tag);"\
+                             tg-typeahead-max-lines="4"\
+                             tg-typeahead-tag-selected="onTagSelected(tag, sender);"\
+                             tg-typeahead-tag-deselected="onTagDeselected(tag, sender);"\
                              ng-model="dataHolder.model">\
                             <div tg-typeahead-data-set="territory as territory.name for territory in dataHolder.source.all | tgTerritoryFilter:$viewValue">\
                                 <div tg-typeahead-data-set-item="">\
@@ -79,8 +80,10 @@
             val = val.toLowerCase();
 
             return utilities.select(arr, function (item) {
-                if (item.name && item.name.toLowerCase().indexOf(val) !== -1 && !item.getState().selected) {
-                    return item;
+                if (item.name && item.name.toLowerCase().indexOf(val) !== -1) {
+                    if (!item.getState().selected) {
+                        return item;
+                    }
                 }
             });
         };
@@ -99,12 +102,18 @@
             };
 
             if (!utilities.empty(source.worldwide)) {
-                var worldwide = source.worldwide[0];
+                var worldwide = source.worldwide[0],
+                    worldState = {
+                        selected: false
+                    };
 
                 preparedSource.worldwide = {
                     id: worldwide.id,
                     name: worldwide.title,
-                    type: 'WORLDWIDE'
+                    type: 'WORLDWIDE',
+                    getState: function () {
+                        return worldState;
+                    }
                 };
 
                 preparedSource.all.push(preparedSource.worldwide);
@@ -115,6 +124,7 @@
                     clusterTerritories = [],
                     clusterState = {
                         expanded: false,
+                        selected: false,
                         selectedTerritories: 0
                     },
                     newCluster = {
@@ -280,55 +290,86 @@
                         return (clusterState.expanded) ? 'fa-caret-down' : 'fa-caret-right';
                     };
 
-                    scope.toggleTerritorySelection = function (cluster, territory, ignoreClusterUpdate) {
+                    scope.toggleWorldwide = function (state) {
+                        var territories = scope.dataHolder.source.territories;
+
+                        utilities.forEach(territories, function (territory) {
+                            scope.toggleTerritorySelection(territory.getCluster(), territory, false, state);
+                        });
+                    };
+
+                    scope.toggleTerritorySelection = function (cluster, territory, ignoreClusterUpdate, state) {
                         scope.stateHolder.popup.dirty = true;
 
                         var clusterState = cluster.getState(),
-                            territoryState = territory.getState();
+                            territoryState = territory.getState(),
+                            selected = (state === true || state === false) ? state : !territoryState.selected;
 
-                        territoryState.selected = !territoryState.selected;
+                        if (territoryState.selected !== selected) {
+                            territoryState.selected = selected;
 
-                        if (territoryState.selected) {
-                            clusterState.selectedTerritories++;
-                        } else {
-                            clusterState.selectedTerritories--;
-                        }
+                            if (territoryState.selected) {
+                                clusterState.selectedTerritories++;
+                            } else {
+                                clusterState.selectedTerritories--;
+                            }
 
-                        if (!ignoreClusterUpdate) {
-                            updateClusterRegions(cluster);
+                            if (!ignoreClusterUpdate) {
+                                updateCluster(cluster);
+                            }
                         }
                     };
 
-                    scope.toggleClusterSelection = function (cluster) {
+                    scope.toggleClusterSelection = function (cluster, state) {
                         var clusterTerritories = getClusterTerritories(cluster);
 
-                        if (!utilities.empty(clusterTerritories.unselectedTerritories)) {
+                        if (state === true) {
                             utilities.forEach(clusterTerritories.unselectedTerritories, function (clusterTerritory) {
-                                scope.toggleTerritorySelection(cluster, clusterTerritory, true);
+                                scope.toggleTerritorySelection(cluster, clusterTerritory, true, state);
+                            });
+                        } else if (state === false) {
+                            utilities.forEach(clusterTerritories.selectedTerritories, function (clusterTerritory) {
+                                scope.toggleTerritorySelection(cluster, clusterTerritory, true, state);
                             });
                         } else {
-                            utilities.forEach(clusterTerritories.selectedTerritories, function (clusterTerritory) {
-                                scope.toggleTerritorySelection(cluster, clusterTerritory, true);
-                            });
+                            if (!utilities.empty(clusterTerritories.unselectedTerritories)) {
+                                utilities.forEach(clusterTerritories.unselectedTerritories, function (clusterTerritory) {
+                                    scope.toggleTerritorySelection(cluster, clusterTerritory, true, state);
+                                });
+                            } else {
+                                utilities.forEach(clusterTerritories.selectedTerritories, function (clusterTerritory) {
+                                    scope.toggleTerritorySelection(cluster, clusterTerritory, true, state);
+                                });
+                            }
                         }
 
-                        updateClusterRegions(cluster);
+                        updateCluster(cluster);
                     };
 
-                    scope.toggleRegionSelection = function (cluster, region) {
+                    scope.toggleRegionSelection = function (cluster, region, state) {
                         var regionTerritories = getRegionTerritories(region);
 
-                        if (!utilities.empty(regionTerritories.unselectedTerritories)) {
+                        if (state === true) {
                             utilities.forEach(regionTerritories.unselectedTerritories, function (regionTerritory) {
-                                scope.toggleTerritorySelection(cluster, regionTerritory, true);
+                                scope.toggleTerritorySelection(cluster, regionTerritory, true, state);
+                            });
+                        } else if (state === false) {
+                            utilities.forEach(regionTerritories.selectedTerritories, function (regionTerritory) {
+                                scope.toggleTerritorySelection(cluster, regionTerritory, true, state);
                             });
                         } else {
-                            utilities.forEach(regionTerritories.selectedTerritories, function (regionTerritory) {
-                                scope.toggleTerritorySelection(cluster, regionTerritory, true);
-                            });
+                            if (!utilities.empty(regionTerritories.unselectedTerritories)) {
+                                utilities.forEach(regionTerritories.unselectedTerritories, function (regionTerritory) {
+                                    scope.toggleTerritorySelection(cluster, regionTerritory, true, state);
+                                });
+                            } else {
+                                utilities.forEach(regionTerritories.selectedTerritories, function (regionTerritory) {
+                                    scope.toggleTerritorySelection(cluster, regionTerritory, true, state);
+                                });
+                            }
                         }
 
-                        updateClusterRegions(cluster);
+                        updateCluster(cluster);
                     };
 
                     scope.clusterSelectionClass = function (cluster) {
@@ -343,54 +384,50 @@
                         return 'fa-square-o';
                     };
 
-                    scope.onTagSelected = function (tag) {
-                        var item = tag.match.data,
-                            state = item.getState();
+                    scope.onTagSelected = function (tag, sender) {
+                        if (sender !== 'ModelUpdate') {
+                            var item = tag.match.data;
 
-                        switch (item.type) {
-                            case 'WORLDWIDE':
-                                break;
-                            case 'CLUSTER':
-                                scope.toggleClusterSelection(item);
-                                break;
-                            case 'REGION':
-                                if (!state.selected) {
-                                    scope.toggleRegionSelection(item.getCluster(), item);
-                                }
-                                break;
-                            case 'COUNTRY':
-                                if (!state.selected) {
-                                    scope.toggleTerritorySelection(item.getCluster(), item, false);
-                                }
-                                break;
+                            switch (item.type) {
+                                case 'WORLDWIDE':
+                                    scope.toggleWorldwide(true);
+                                    break;
+                                case 'CLUSTER':
+                                    scope.toggleClusterSelection(item, true);
+                                    break;
+                                case 'REGION':
+                                    scope.toggleRegionSelection(item.getCluster(), item, true);
+                                    break;
+                                case 'COUNTRY':
+                                    scope.toggleTerritorySelection(item.getCluster(), item, false, true);
+                                    break;
+                            }
+
+                            updateModel();
                         }
-
-                        updateModel();
                     };
 
-                    scope.onTagDeselected = function (tag) {
-                        var item = tag.match.data,
-                            state = item.getState();
+                    scope.onTagDeselected = function (tag, sender) {
+                        if (sender !== 'ModelUpdate') {
+                            var item = tag.match.data;
 
-                        switch (item.type) {
-                            case 'WORLDWIDE':
-                                break;
-                            case 'CLUSTER':
-                                scope.toggleClusterSelection(item);
-                                break;
-                            case 'REGION':
-                                if (state.selected) {
-                                    scope.toggleRegionSelection(item.getCluster(), item);
-                                }
-                                break;
-                            case 'COUNTRY':
-                                if (state.selected) {
-                                    scope.toggleTerritorySelection(item.getCluster(), item, false);
-                                }
-                                break;
+                            switch (item.type) {
+                                case 'WORLDWIDE':
+                                    scope.toggleWorldwide(false);
+                                    break;
+                                case 'CLUSTER':
+                                    scope.toggleClusterSelection(item, false);
+                                    break;
+                                case 'REGION':
+                                    scope.toggleRegionSelection(item.getCluster(), item, false);
+                                    break;
+                                case 'COUNTRY':
+                                    scope.toggleTerritorySelection(item.getCluster(), item, false, false);
+                                    break;
+                            }
+
+                            updateModel();
                         }
-
-                        updateModel();
                     };
 
                     function getClusterTerritories(cluster) {
@@ -434,10 +471,10 @@
                     }
 
                     function updateCluster(cluster) {
-                        utilities.forEach(cluster.getRegions(), function (region) {
-                            var regionState = region.getState();
-                            regionState.selected = utilities.empty(getRegionTerritories(region).unselectedTerritories);
-                        });
+                        var clusterState = cluster.getState();
+                        clusterState.selected = utilities.empty(getClusterTerritories(cluster).unselectedTerritories);
+
+                        updateClusterRegions(cluster);
                     }
 
                     function updateClusterRegions(cluster) {
@@ -448,35 +485,35 @@
                     }
 
                     function updateModel() {
-                        scope.dataHolder.model.splice(0, scope.dataHolder.model.length);
+                        var source = scope.dataHolder.source,
+                            model = scope.dataHolder.model,
+                            selectedClusters = 0;
 
-                        var source = scope.dataHolder.source;
+                        model.length = 0;
 
-                        source.clusters.forEach(function (cluster) {
+                        utilities.forEach(source.clusters, function (cluster) {
                             var clusterState = cluster.getState();
 
                             if (clusterState.selectedTerritories > 0) {
                                 if (clusterState.selectedTerritories === cluster.getTerritories().length) {
-                                    scope.dataHolder.model.push(cluster);
-                                }
-                            }
-                        });
-
-                        source.clusters.forEach(function (cluster) {
-                            var clusterState = cluster.getState();
-
-                            if (clusterState.selectedTerritories > 0) {
-                                if (clusterState.selectedTerritories !== cluster.getTerritories().length) {
+                                    model.push(cluster);
+                                    selectedClusters++;
+                                } else {
                                     cluster.getTerritories().forEach(function (territory) {
                                         var territoryState = territory.getState();
 
                                         if (territoryState.selected) {
-                                            scope.dataHolder.model.push(territory);
+                                            model.push(territory);
                                         }
                                     });
                                 }
                             }
                         });
+
+                        if (selectedClusters === source.clusters.length) {
+                            model.length = 0;
+                            model.push(source.worldwide);
+                        }
                     }
 
                     $setModelValue(parentScope, scope.dataHolder.model);

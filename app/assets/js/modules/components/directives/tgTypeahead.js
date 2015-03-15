@@ -818,7 +818,7 @@
                                             $timeout(scrollToActiveMatch);
                                             scope.$digest();
                                         } else if (evt.which === 13 || evt.which === 32) { // Enter or Space Key
-                                            if (activeDataSet) {
+                                            if (activeDataSet && dataSetSource.activeIndex !== -1) {
                                                 scope.$selectMatch(activeDataSet, dataSetSource.activeIndex, dataSetSource.matches[dataSetSource.activeIndex], evt);
                                                 scope.$apply();
                                             }
@@ -833,7 +833,7 @@
 
                             scope.$watchModel = function () {
                                 scope.$watch(scope.$getModel, function (model) {
-                                    if (model === undefined || !angular.equals(model, scope.$dataHolder.modelValue)) {
+                                    if (model === undefined || model !== scope.$dataHolder.modelValue) {
                                         scope.refreshModel(model);
                                     }
 
@@ -1391,7 +1391,8 @@
                     compile: function (tElement, tAttrs) {
                         var RenderTemplateModel = $injector.get('tgTypeaheadRenderTemplateModel'),
                             MatchModel = $injector.get('tgTypeaheadMatchModel'),
-                            TagModel = $injector.get('tgTypeaheadTagModel');
+                            TagModel = $injector.get('tgTypeaheadTagModel'),
+                            utilities = $injector.get('utilities');
 
                         function prepareOptions(obj, scope, attrs) {
                             var options = {};
@@ -1493,11 +1494,12 @@
                                 return (options.maxSelectedTags === 0 || options.maxSelectedTags > scope.$tags.length);
                             };
 
-                            scope.$addTag = function (tag) {
+                            scope.$addTag = function (tag, sender) {
                                 if (tag && tag.match && scope.$canAddTag()) {
                                     var evt = {
                                         context: scope.tgTypeaheadContext,
                                         tag: tag,
+                                        sender: sender || 'Control',
                                         $internal: scope
                                     };
 
@@ -1553,7 +1555,7 @@
                                 return $q.when(undefined);
                             };
 
-                            scope.$removeTag = function (tag) {
+                            scope.$removeTag = function (tag, sender) {
                                 var idx = scope.$tags.indexOf(tag);
 
                                 if (idx !== -1) {
@@ -1561,6 +1563,7 @@
                                         context: scope.tgTypeaheadContext,
                                         index: idx,
                                         tag: tag,
+                                        sender: sender || 'Control',
                                         $internal: scope
                                     };
 
@@ -1796,11 +1799,81 @@
                             });
 
                             tgTypeaheadCtrl.$overrideFn('$watchModel', function () {
-                                scope.$watchCollection(scope.$getModel, function (model, oldValue) {
-                                    //if (model === undefined || !angular.equals(model, scope.$dataHolder.modelValue)) {
-                                        scope.refreshModel(model);
-                                    //}
-                                });
+                                var len = scope.$dataSets.length,
+                                    single = (len === 1),
+                                    multiple = (len > 1);
+
+                                var fnUpdateTagsList = function (dataSet, model) {
+                                    var sourceModel = dataSet.queried,
+                                        addTags = [],
+                                        removeTags = [];
+
+                                    // collect tags which should be added
+                                    utilities.forEach(model, function (it) {
+                                        var matchedTag = utilities.each(scope.$tags, function (tag) {
+                                            if (tag.dataSet.comparator(tag.match.model, it)) {
+                                                return tag;
+                                            }
+                                        });
+
+                                        if (!matchedTag) {
+                                            var item = sourceModel.$getItem(it, scope.$parent),
+                                                match = new MatchModel(it, item.model, item.value),
+                                                tag = new TagModel(match, dataSet.build());
+
+                                            addTags.push(tag);
+                                        }
+                                    });
+
+                                    // collect tags which should be removed
+                                    utilities.forEach(scope.$tags, function (tag) {
+                                        var matchedItem = utilities.each(model, function (it) {
+                                            if (tag.dataSet.comparator(tag.match.model, it)) {
+                                                return it;
+                                            }
+                                        });
+
+                                        if (!matchedItem) {
+                                            removeTags.push(tag);
+                                        }
+                                    });
+
+                                    removeTags.forEach(function (tag) {
+                                        scope.$removeTag(tag, 'ModelUpdate');
+                                    });
+
+                                    addTags.forEach(function (tag) {
+                                        scope.$addTag(tag, 'ModelUpdate');
+                                    });
+                                };
+
+                                if (single) {
+                                    scope.$watchCollection(scope.$getModel, function (model) {
+                                        if (!Array.isArray(model) || model !== scope.$dataHolder.modelValue) {
+                                            scope.refreshModel(model);
+                                        } else {
+                                            fnUpdateTagsList(scope.$dataSets[0], model);
+                                        }
+                                    });
+                                } else if (multiple) {
+                                    var currentModel;
+
+                                    scope.$watch(scope.$getModel, function (model) {
+                                        if (!Array.isArray(model) || model !== scope.$dataHolder.modelValue) {
+                                            currentModel = scope.refreshModel(model);
+                                        }
+                                    });
+
+                                    scope.$dataSets.forEach(function (dataSet) {
+                                        var fnGetModel = function () {
+                                            return currentModel && currentModel[dataSet.name];
+                                        };
+
+                                        scope.$watchCollection(fnGetModel, function (model) {
+                                            fnUpdateTagsList(dataSet, model);
+                                        });
+                                    });
+                                }
                             });
 
                             tgTypeaheadCtrl.$overrideFn('$prepareDefaultModel', function () {
@@ -1866,7 +1939,7 @@
                                                 match = new MatchModel(match, item.model, item.value),
                                                 tag = new TagModel(match, dataSet.build());
 
-                                            scope.$addTag(tag);
+                                            scope.$addTag(tag, 'ModelUpdate');
                                         });
                                     });
                                 }
