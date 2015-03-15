@@ -43,7 +43,7 @@
 
             $templateCache.put('tg-typeahead-container.tpl.html',
                 '<div class="tg-typeahead__input-container" style="position: relative"' +
-                '     ng-show="$isVisibleInput()">' +
+                '     ng-show="$isVisibleInput() && !$stateHolder.tagTransformed">' +
                 '   <a href="" class="tg-typeahead__clear-link"' +
                 '      ng-show="!$stateHolder.loader && $isVisibleClear()"' +
                 '      ng-click="$clear($event);">Remove All</a>' +
@@ -118,9 +118,10 @@
                 '<div class="tg-typeahead__tag-manager"' +
                 '     ng-class="$templates.tagManager.wrapper.class"' +
                 '     ng-style="$templates.tagManager.wrapper.style">' +
-                '   <div ng-repeat="$tag in $tags | orderBy:$tagsOrder">' +
+                '   <div data-ng-if="!$stateHolder.tagTransformed" ng-repeat="$tag in $tags | orderBy:$tagsOrder">' +
                 '       <div tg-typeahead-render-template="$templates.tagManager.tag"></div>' +
                 '   </div>' +
+                '   <div class="tg-typeahead__tags-text" data-ng-if="$stateHolder.tagTransformed">{{ $getTagsText() }}</div>' +
                 '</div>');
 
             $templateCache.put('tg-typeahead-tag.tpl.html',
@@ -1439,6 +1440,12 @@
                                 options.displayClean = obj && obj.displayClean || false;
                             }
 
+                            if (attrs.tgTypeaheadTagTransform) {
+                                options.tagTransform = (attrs.tgTypeaheadTagTransform === 'true');
+                            } else {
+                                options.tagTransform = obj && obj.tagTransform || false;
+                            }
+
                             if (attrs.tgTypeaheadTagManagerTemplateUrl) {
                                 options.tagManagerTemplateUrl = attrs.tgTypeaheadTagManagerTemplateUrl;
                             } else {
@@ -1484,12 +1491,22 @@
 
                             scope.$templates.main.header = scope.$templates.tagManager.wrapper;
 
+                            scope.$stateHolder = angular.extend(scope.$stateHolder || {}, {
+                                tagTransformed: false
+                            });
+
                             scope.$eventHolder = angular.extend(scope.$eventHolder || {}, {
                                 onTagSelected: $parse(attrs.tgTypeaheadTagSelected),
                                 onTagDeselected: $parse(attrs.tgTypeaheadTagDeselected)
                             });
 
                             // internal functionality
+                            scope.$getTagsText = function () {
+                                return utilities.select(scope.$tags, function (tag) {
+                                    return tag.match.value;
+                                }).join(', ');
+                            };
+
                             scope.$canAddTag = function () {
                                 return (options.maxSelectedTags === 0 || options.maxSelectedTags > scope.$tags.length);
                             };
@@ -1999,6 +2016,16 @@
 
                             tgTypeaheadCtrl.clearTags = function () {
                                 scope.$clearTags();
+                            };
+
+                            tgTypeaheadCtrl.switchToText = function () {
+                                scope.$stateHolder.tagTransformed = true;
+                            };
+
+                            tgTypeaheadCtrl.switchToTags = function () {
+                                scope.$stateHolder.tagTransformed = false;
+
+                                $timeout(updateTagManagerScrollPosition);
                             };
 
                             /**

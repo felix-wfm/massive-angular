@@ -10,6 +10,7 @@
                              tg-typeahead=""\
                              tg-typeahead-tag-manager=""\
                              tg-typeahead-max-lines="4"\
+                             tg-typeahead-tag-transform="true"\
                              tg-typeahead-tag-selected="onTagSelected(tag, sender);"\
                              tg-typeahead-tag-deselected="onTagDeselected(tag, sender);"\
                              ng-model="dataHolder.model">\
@@ -520,9 +521,17 @@
                 }
 
                 function postLink(scope, element, attrs, controllers) {
+                    var tgTypeaheadCtrl = element
+                        .find('.tg-territory__input')
+                        .controller('tgTypeahead');
+
                     var onDocumentClick = function (evt) {
                         if (element.has(evt.target).length === 0) {
+                            tgTypeaheadCtrl.switchToText();
                             scope.onOutsideClick();
+                            scope.$digest();
+                        } else {
+                            tgTypeaheadCtrl.switchToTags();
                             scope.$digest();
                         }
                     };
