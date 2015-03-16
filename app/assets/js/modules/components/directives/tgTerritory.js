@@ -8,6 +8,7 @@
                     <div class="tg-territory__input-container">\
                         <div class="tg-territory__input"\
                              tg-typeahead=""\
+                             tg-typeahead-disabled="$isDisabled()"\
                              tg-typeahead-tag-manager=""\
                              tg-typeahead-max-lines="4"\
                              tg-typeahead-tag-transform="true"\
@@ -19,16 +20,28 @@
                                     <span>{{$match.data.name}}</span>\
                                 </div> \
                             </div>\
+                            <div tg-typeahead-popup-footer="">\
+                                <div class="tg-typeahead__suggestions-footer-inner" ng-show="$dataSets[0].queried.matches == 0">Territory with name <strong>{{$term}}</strong> doesn\'t exist.</div>\
+                            </div>\
                         </div>\
-                        <button class="tg-territory__button" ng-click="openPopup();"></button>\
+                        <button class="tg-territory__button" ng-click="!$isDisabled() && openPopup();"></button>\
                     </div>\
                     <div class="tg-territory__popup" ng-if="stateHolder.popup.isOpen">\
-                        <div class="tg-territory__popup-header"></div>\
+                        <div class="tg-territory__popup-header">\
+                            <span ng-switch="$isAllExpanded()">\
+                                <a href="" ng-switch-when="false" ng-click="toggleAllClustersExpand(true); $event.stopPropagation();">Expand all</a>\
+                                <a href="" ng-switch-when="true" ng-click="toggleAllClustersExpand(false); $event.stopPropagation();">Collapse all</a>\
+                            </span>\
+                            <span ng-switch="$isAllSelected()">\
+                                <a href="" ng-switch-when="false" ng-click="toggleWorldwide(true); $event.stopPropagation();">Select all</a>\
+                                <a href="" ng-switch-when="true" ng-click="toggleWorldwide(false); $event.stopPropagation();">Deselect all</a>\
+                            </span>\
+                        </div>\
                         <div class="tg-territory__popup-body">\
                             <div class="tg-territory__clusters">\
                                 <div class="tg-territory__cluster" ng-repeat="cluster in dataHolder.source.clusters">\
                                     <div class="tg-territory__cluster-inner">\
-                                        <div class="tg-territory__cluster-header" ng-click="toggleExpand(cluster);">\
+                                        <div class="tg-territory__cluster-header" ng-click="toggleClusterExpand(cluster);">\
                                             <span class="pull-left">\
                                                 <i class="tg-territory__caret fa" ng-class="expandClass(cluster)"></i>\
                                                 {{cluster.name}}\
@@ -48,7 +61,7 @@
                                                     {{territory.name}}\
                                                 </li>\
                                             </ul>\
-                                            <div ng-if="cluster.getRegions().length">\
+                                            <div ng-if="$isVisibleType(\'REGION\') && cluster.getRegions().length">\
                                                 <div class="tg-territory__cluster-region-title">Regions</div>\
                                                 <ul class="tg-territory__cluster-regions">\
                                                     <li class="tg-territory__cluster-region" \
@@ -71,9 +84,9 @@
         .factory('tgTerritoryUtilities', tgTerritoryUtilities)
         .directive('tgTerritory', tgTerritory);
 
-    tgTerritoryFilter.$inject = ['$filter', 'utilities'];
+    tgTerritoryFilter.$inject = ['utilities'];
 
-    function tgTerritoryFilter($filter, utilities) {
+    function tgTerritoryFilter(utilities) {
         return function (arr, val) {
             if (!val) {
                 return arr;
@@ -94,7 +107,7 @@
     tgTerritoryUtilities.$inject = ['utilities'];
 
     function tgTerritoryUtilities(utilities) {
-        function prepareSource(source) {
+        function prepareSource(source, sourceTypes) {
             var preparedSource = {
                 all: [],
                 worldwide: undefined,
@@ -118,7 +131,9 @@
                     }
                 };
 
-                preparedSource.all.push(preparedSource.worldwide);
+                if (utilities.has(sourceTypes, 'WORLDWIDE')) {
+                    preparedSource.all.push(preparedSource.worldwide);
+                }
             }
 
             utilities.forEach(source.clusters, function (cluster) {
@@ -221,9 +236,15 @@
                 preparedSource.clusters.push(newCluster);
             });
 
-            Array.prototype.push.apply(preparedSource.all, preparedSource.clusters);
-            Array.prototype.push.apply(preparedSource.all, preparedSource.regions);
-            Array.prototype.push.apply(preparedSource.all, preparedSource.territories);
+            if (utilities.has(sourceTypes, 'CLUSTER')) {
+                Array.prototype.push.apply(preparedSource.all, preparedSource.clusters);
+            }
+            if (utilities.has(sourceTypes, 'REGION')) {
+                Array.prototype.push.apply(preparedSource.all, preparedSource.regions);
+            }
+            if (utilities.has(sourceTypes, 'COUNTRY')) {
+                Array.prototype.push.apply(preparedSource.all, preparedSource.territories);
+            }
 
             console.log(preparedSource);
 
@@ -242,22 +263,46 @@
             restrict: 'A',
             require: ['tgTerritory', '?ngModel'],
             scope: {
-                tgTerritory: '@',
+                tgTerritory: '=?',
                 tgTerritoryId: '@',
-                tgTerritorySource: '='
+                tgTerritorySource: '=',
+                tgTerritoryDisabled: '=?'
             },
             templateUrl: 'tg-territory.tpl.html',
             compile: function (tElement, tAttrs) {
                 var $getModelValue = $parse(tAttrs.ngModel),
                     $setModelValue = $getModelValue.assign;
 
+                function prepareOptions(obj, attrs, scope) {
+                    var options = {};
+
+                    if (attrs.tgTerritorySourceTypes) {
+                        options.sourceTypes = $parse(attrs.tgTerritorySourceTypes)(scope);
+                    } else {
+                        options.sourceTypes = obj && obj.sourceTypes;
+                    }
+
+                    if (utilities.empty(options.sourceTypes)) {
+                        options.sourceTypes = ['COUNTRY'];
+                    }
+
+                    if (attrs.tgTerritoryTagsTransform) {
+                        options.tagsTransform = (attrs.tgTerritoryTagsTransform === 'true');
+                    } else {
+                        options.tagsTransform = obj && obj.tagsTransform || false;
+                    }
+
+                    return options;
+                }
+
                 function preLink(scope, element, attrs, controllers) {
                     var parentScope = scope.$parent,
                         selfCtrl = controllers[0],
-                        ngModelCtrl = controllers[1];
+                        ngModelCtrl = controllers[1],
+                        options = prepareOptions(scope.tgTerritory, attrs, scope);
 
                     scope.dataHolder = {
-                        source: tgTerritoryUtilities.prepareSource(scope.tgTerritorySource),
+                        source: tgTerritoryUtilities.prepareSource(scope.tgTerritorySource, options.sourceTypes),
                         model: []
                     };
 
@@ -265,24 +310,73 @@
                         popup: {
                             isOpen: false,
                             dirty: false
-                        }
+                        },
+                        disabled: false
+                    };
+
+                    scope.$isDisabled = function () {
+                        return !!scope.tgTerritoryDisabled || scope.stateHolder.disabled;
+                    };
+
+                    scope.$isVisibleType = function (type) {
+                        return utilities.has(options.sourceTypes, type);
+                    };
+
+                    scope.$isAllExpanded = function () {
+                        var source = scope.dataHolder.source;
+
+                        return !utilities.each(source.clusters, function (cluster) {
+                            if (!cluster.getState().expanded) {
+                                return true;
+                            }
+                        });
+                    };
+
+                    scope.$isAllSelected = function () {
+                        var source = scope.dataHolder.source;
+
+                        return !utilities.each(source.territories, function (territory) {
+                            if (!territory.getState().selected) {
+                                return true;
+                            }
+                        });
                     };
 
                     scope.openPopup = function () {
-                        scope.stateHolder.popup.isOpen = true;
+                        if (scope.$isVisibleType('CLUSTER')) {
+                            scope.stateHolder.popup.isOpen = !scope.stateHolder.popup.isOpen;
+                        }
                     };
 
                     scope.onOutsideClick = function () {
+                        if (options.tagsTransform) {
+                            getTypeaheadCtrl().switchToText();
+                        }
+
                         if (scope.stateHolder.popup.isOpen && scope.stateHolder.popup.dirty) {
                             scope.stateHolder.popup.dirty = false;
-
                             updateModel();
                         }
 
                         scope.stateHolder.popup.isOpen = false;
                     };
 
-                    scope.toggleExpand = function (cluster) {
+                    scope.onInsideClick = function () {
+                        if (options.tagsTransform) {
+                            getTypeaheadCtrl().switchToTags();
+                        }
+                    };
+
+                    scope.toggleAllClustersExpand = function (state) {
+                        var clusters = scope.dataHolder.source.clusters;
+
+                        utilities.forEach(clusters, function (cluster) {
+                            var clusterState = cluster.getState();
+                            clusterState.expanded = (state !== undefined) ? state : !clusterState.expanded;
+                        });
+                    };
+
+                    scope.toggleClusterExpand = function (cluster) {
                         var clusterState = cluster.getState();
                         clusterState.expanded = !clusterState.expanded;
                     };
@@ -518,21 +612,24 @@
                         }
                     }
 
+                    function getTypeaheadCtrl() {
+                        var tgTypeaheadCtrl = element
+                            .find('.tg-territory__input')
+                            .controller('tgTypeahead');
+
+                        return tgTypeaheadCtrl;
+                    }
+
                     $setModelValue(parentScope, scope.dataHolder.model);
                 }
 
                 function postLink(scope, element, attrs, controllers) {
-                    var tgTypeaheadCtrl = element
-                        .find('.tg-territory__input')
-                        .controller('tgTypeahead');
-
                     var onDocumentClick = function (evt) {
                         if (element.has(evt.target).length === 0) {
-                            tgTypeaheadCtrl.switchToText();
                             scope.onOutsideClick();
                             scope.$digest();
                         } else {
-                            tgTypeaheadCtrl.switchToTags();
+                            scope.onInsideClick();
                             scope.$digest();
                         }
                     };
