@@ -30,7 +30,7 @@
                                     <div class="tg-territory__cluster-inner">\
                                         <div class="tg-territory__cluster-header" ng-click="toggleExpand(cluster);">\
                                             <span class="pull-left">\
-                                                <i class="fa" ng-class="expandClass(cluster)"></i>\
+                                                <i class="tg-territory__caret fa" ng-class="expandClass(cluster)"></i>\
                                                 {{cluster.name}}\
                                             </span>\
                                             <span class="pull-right">\
@@ -38,17 +38,18 @@
                                                 <i class="fa" ng-class="clusterSelectionClass(cluster)" ng-click="$event.stopPropagation(); toggleClusterSelection(cluster);"></i>\
                                             </span>\
                                         </div>\
-                                        <div ng-if="cluster.getState().expanded">\
+                                        <div class="tg-territory__cluster-body"\
+                                             ng-if="cluster.getState().expanded">\
                                             <ul class="tg-territory__cluster-countries">\
                                                 <li class="tg-territory__cluster-country" \
                                                     ng-repeat="territory in cluster.getTerritories()" \
                                                     ng-click="toggleTerritorySelection(cluster, territory);" \
                                                     ng-class="{\'m-active\':territory.getState().selected}">\
-                                                    <span>{{territory.name}}</span>\
+                                                    {{territory.name}}\
                                                 </li>\
                                             </ul>\
                                             <div ng-if="cluster.getRegions().length">\
-                                                <p class="tg-territory__cluster-region-title">Regions</p>\
+                                                <div class="tg-territory__cluster-region-title">Regions</div>\
                                                 <ul class="tg-territory__cluster-regions">\
                                                     <li class="tg-territory__cluster-region" \
                                                         ng-repeat="region in cluster.getRegions()" \

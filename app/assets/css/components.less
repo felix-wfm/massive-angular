@@ -537,13 +537,17 @@ div.ng-invalid-required[tg-dropdown] {
 }
 .tg-territory__cluster-inner {
     background-color: #ffffff;
+    padding: 10px;
 }
 .tg-territory__cluster-header {
     .clearfix();
-
     cursor: pointer;
-    padding-right: 5px;
 }
+
+.tg-territory__cluster-body {
+    margin-top: 10px;
+}
+
 .tg-territory__cluster-countries,
 .tg-territory__cluster-regions {
     .content-columns(2, 10px);
@@ -554,20 +558,55 @@ div.ng-invalid-required[tg-dropdown] {
 .tg-territory__cluster-region {
     line-height: 25px;
     border: 1px dashed transparent;
-    margin: 4px;
+    margin: 0 0 5px 0;
     cursor: pointer;
+    position: relative;
+    padding: 0 24px 0 4px;
+
+    &:after {
+        position: absolute;
+        top: 0;
+        right: 10px;
+        opacity: .2;
+    }
 
     &:hover {
         border-color: #ccc;
+
+        &:after {
+            content: '+';
+
+        }
     }
 
     &.m-active {
         border: 1px solid #dddada;
         background-color: #e9e8e8;
+
+        &:hover {
+            &:after {
+                color: #30befa;
+                opacity: 1;
+            }
+        }
+
+        &:after {
+            content: 'x';
+        }
     }
 }
 .tg-territory__cluster-region-title {
     border-top: 1px solid #bcbcbc;
     margin: 0 6px 0;
+    padding: 10px 0;
     color: #bcbcbc;
+}
+
+.tg-territory__caret {
+    color: #02b4fe;
+    width: 20px;
+    height: 20px;
+    float: left;
+    line-height: 20px;
+    text-align: center;
 }
