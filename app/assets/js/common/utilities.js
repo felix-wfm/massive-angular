@@ -39,7 +39,7 @@
             }
         }
 
-        function each(obj, fn) {
+        function each(obj, fn, defaultValue) {
             if (obj && isFunction(fn)) {
                 var result;
 
@@ -63,6 +63,8 @@
                     }
                 }
             }
+
+            return defaultValue;
         }
 
         function select(obj, fnProp, unique) {
