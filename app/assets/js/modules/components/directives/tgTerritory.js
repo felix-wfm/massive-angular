@@ -24,18 +24,19 @@
                                 <div class="tg-typeahead__suggestions-footer-inner" ng-show="$dataSets[0].queried.matches == 0">Territory with name <strong>{{$term}}</strong> doesn\'t exist.</div>\
                             </div>\
                         </div>\
-                        <button class="tg-territory__button" ng-click="!$isDisabled() && openPopup();"></button>\
+                        <button class="tg-territory__globe-button" ng-click="!$isDisabled() && openPopup();"></button>\
                     </div>\
                     <div class="tg-territory__popup" ng-if="stateHolder.popup.isOpen">\
                         <div class="tg-territory__popup-header">\
-                            <span ng-switch="$isAllExpanded()">\
-                                <a href="" ng-switch-when="false" ng-click="toggleAllClustersExpand(true); $event.stopPropagation();">Expand all</a>\
-                                <a href="" ng-switch-when="true" ng-click="toggleAllClustersExpand(false); $event.stopPropagation();">Collapse all</a>\
-                            </span>\
-                            <span ng-switch="$isAllSelected()">\
-                                <a href="" ng-switch-when="false" ng-click="toggleWorldwide(true); $event.stopPropagation();">Select all</a>\
-                                <a href="" ng-switch-when="true" ng-click="toggleWorldwide(false); $event.stopPropagation();">Deselect all</a>\
-                            </span>\
+                            <div class="pull-left" ng-switch="$isAllExpanded()">\
+                                <button class="tg-territory__btn" ng-switch-when="false" ng-click="toggleAllClustersExpand(true); $event.stopPropagation();">Expand all</button>\
+                                <button class="tg-territory__btn" ng-switch-when="true" ng-click="toggleAllClustersExpand(false); $event.stopPropagation();">Collapse all</button>\
+                            </div>\
+                            <div class="pull-left" ng-switch="$isAllSelected()">\
+                                <button class="tg-territory__btn" ng-switch-when="false" ng-click="toggleWorldwide(true); $event.stopPropagation();">Select all</button>\
+                                <button class="tg-territory__btn" ng-switch-when="true" ng-click="toggleWorldwide(false); $event.stopPropagation();">Deselect all</button>\
+                            </div>\
+                            <button class="tg-territory__btn pull-right">Close</button>\
                         </div>\
                         <div class="tg-territory__popup-body">\
                             <div class="tg-territory__clusters">\
