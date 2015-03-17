@@ -29,110 +29,114 @@
     angular.module('tg.components')
         .run(['$templateCache', function ($templateCache) {
             $templateCache.put('tg-typeahead.tpl.html',
-                '<div class="tg-typeahead"' +
-                '     ng-class="tgTypeaheadWrapClass">' +
-                '   <div tg-typeahead-render-template="$templates.main.header"></div>' +
-                '   <div tg-typeahead-render-template="$templates.main.container"></div>' +
-                '   <div tg-typeahead-render-template="$templates.main.footer"></div>' +
-                '   <div class="tg-typeahead__suggestions-wrap"' +
-                '        tg-typeahead-render-template="$templates.popup.wrapper"></div>' +
-                '   <div class="tg-typeahead__suggestions-wrap"' +
-                '        ng-if="$stateHolder.hasSuggestions"' +
-                '        tg-typeahead-render-template="$templates.suggestedPopup.wrapper"></div>' +
-                '</div>');
+                '<div class="tg-typeahead"\
+                      ng-class="tgTypeaheadWrapClass">\
+                   <div tg-typeahead-render-template="$templates.main.header"></div>\
+                   <div tg-typeahead-render-template="$templates.main.container"></div>\
+                   <div tg-typeahead-render-template="$templates.main.footer"></div>\
+                   <div class="tg-typeahead__suggestions-wrap"\
+                        tg-typeahead-render-template="$templates.popup.wrapper"></div>\
+                   <div class="tg-typeahead__suggestions-wrap"\
+                        ng-if="$stateHolder.hasSuggestions"\
+                        tg-typeahead-render-template="$templates.suggestedPopup.wrapper"></div>\
+                </div>');
 
             $templateCache.put('tg-typeahead-container.tpl.html',
-                '<div class="tg-typeahead__input-container" style="position: relative"' +
-                '     ng-show="$isVisibleInput() && !$stateHolder.tagTransformed">' +
-                '   <a href="" class="tg-typeahead__clear-link"' +
-                '      ng-show="!$stateHolder.loader && $isVisibleClear()"' +
-                '      ng-click="$clear($event);">Remove All</a>' +
-                '   <div class="input-loader tg-typeahead__loader" ng-show="$stateHolder.loader"></div>' +
-                '   <div class="tg-typeahead__input-wrap">' +
-                '       <input type="text" class="tg-typeahead__input"' +
-                '              placeholder="{{ $getPlaceholder() }}"' +
-                '              ng-model="$term"' +
-                '              ng-disabled="$isDisabled()">' +
-                '   </div>' +
-                '</div>');
+                '<div class="tg-typeahead__input-container"\
+                      ng-show="$isVisibleInput() && !$stateHolder.tagTransformed">\
+                    <a href="" class="tg-typeahead__clear-link"\
+                       ng-show="!$stateHolder.loader && $isVisibleClear()"\
+                       ng-click="$clear($event);">Remove All</a>\
+                    <div class="input-loader tg-typeahead__loader"\
+                         ng-show="$stateHolder.loader"></div>\
+                    <div class="tg-typeahead__input-wrap">\
+                        <input type="text" class="tg-typeahead__input"\
+                               placeholder="{{ $getPlaceholder() }}"\
+                               ng-model="$term"\
+                               ng-disabled="$isDisabled()">\
+                    </div>\
+                </div>');
 
             $templateCache.put('tg-typeahead-popup.tpl.html',
-                '<ul class="tg-typeahead__suggestions"' +
-                '    ng-if="$stateHolder.popup.opened"' +
-                '    ng-style="$templates.popup.wrapper.style">' +
-                '    <li class="tg-typeahead__suggestions-header"' +
-                '        tg-typeahead-render-template="$templates.popup.header"></li>' +
-                '    <li class="tg-typeahead__suggestions-container"' +
-                '        tg-when-scrolled="$onPopupScrolled($event);">' +
-                '        <div ng-repeat="$dataSet in $dataSets | filter:{ queried: { active: true } }">' +
-                '            <div class="tg-typeahead__suggestions-group-header"' +
-                '                 tg-typeahead-render-template="$dataSet.templates.header || $templates.dataSet.header"></div>' +
-                '            <ul class="tg-typeahead__suggestions-group">' +
-                '                <li class="tg-typeahead__suggestions-group-item"' +
-                '                    ng-repeat="$match in $dataSet.queried.matches | limitTo:$dataSet.queried.limit"' +
-                '                    ng-class="{ active: $index === $dataSet.queried.activeIndex, selected: $match.selected, disabled: $match.disabled }">' +
-                '                    <div tg-typeahead-render-template="$dataSet.templates.item || $templates.dataSet.item"></div>' +
-                '                </li>' +
-                '            </ul>' +
-                '            <div class="tg-typeahead__suggestions-group-footer"' +
-                '                tg-typeahead-render-template="$dataSet.templates.footer || $templates.dataSet.footer"></div>' +
-                '        </div>' +
-                '    </li>' +
-                '    <li class="tg-typeahead__suggestions-footer"' +
-                '        tg-typeahead-render-template="$templates.popup.footer"></li>' +
-                '</ul>');
+                '<ul class="tg-typeahead__suggestions"\
+                     ng-if="$stateHolder.popup.opened"\
+                     ng-style="$templates.popup.wrapper.style">\
+                    <li class="tg-typeahead__suggestions-header"\
+                        tg-typeahead-render-template="$templates.popup.header"></li>\
+                    <li class="tg-typeahead__suggestions-container"\
+                        tg-when-scrolled="$onPopupScrolled($event);">\
+                        <div ng-repeat="$dataSet in $dataSets | filter:{ queried: { active: true } }">\
+                            <div class="tg-typeahead__suggestions-group-header"\
+                                 tg-typeahead-render-template="$dataSet.templates.header || $templates.dataSet.header"></div>\
+                            <ul class="tg-typeahead__suggestions-group">\
+                                <li class="tg-typeahead__suggestions-group-item"\
+                                    ng-repeat="$match in $dataSet.queried.matches | limitTo:$dataSet.queried.limit"\
+                                    ng-class="{ active: $index === $dataSet.queried.activeIndex, selected: $match.selected, disabled: $match.disabled }">\
+                                    <div tg-typeahead-render-template="$dataSet.templates.item || $templates.dataSet.item"></div>\
+                                </li>\
+                            </ul>\
+                            <div class="tg-typeahead__suggestions-group-footer"\
+                                 tg-typeahead-render-template="$dataSet.templates.footer || $templates.dataSet.footer"></div>\
+                        </div>\
+                    </li>\
+                    <li class="tg-typeahead__suggestions-footer"\
+                        tg-typeahead-render-template="$templates.popup.footer"></li>\
+                </ul>');
 
             $templateCache.put('tg-typeahead-dataSet-item.tpl.html',
                 '<span ng-bind-html="$match.value | tgTrustedHtml"></span>');
 
             $templateCache.put('tg-typeahead-suggested-popup.tpl.html',
-                '<ul class="tg-typeahead__suggestions"' +
-                '    ng-if="$stateHolder.suggestedPopup.opened"' +
-                '    ng-style="$templates.suggestedPopup.wrapper.style">' +
-                '    <li class="tg-typeahead__suggestions-header"' +
-                '        tg-typeahead-render-template="$templates.suggestedPopup.header"></li>' +
-                '    <li class="tg-typeahead__suggestions-container"' +
-                '        tg-when-scrolled="$onPopupScrolled($event);">' +
-                '        <div ng-repeat="$dataSet in $dataSets | filter:{ suggested: { active: true } }">' +
-                '            <div class="tg-typeahead__suggestions-group-header"' +
-                '                 tg-typeahead-render-template="$dataSet.templates.header || $templates.dataSet.header"></div>' +
-                '            <ul class="tg-typeahead__suggestions-group">' +
-                '                <li class="tg-typeahead__suggestions-group-item"' +
-                '                    ng-repeat="$match in $dataSet.suggested.matches | limitTo:$dataSet.suggested.limit"' +
-                '                    ng-class="{ active: $index === $dataSet.suggested.activeIndex, selected: $match.selected, disabled: $match.disabled }">' +
-                '                    <div tg-typeahead-render-template="$dataSet.templates.item || $templates.dataSet.item"></div>' +
-                '                </li>' +
-                '            </ul>' +
-                '            <div class="tg-typeahead__suggestions-group-footer"' +
-                '                tg-typeahead-render-template="$dataSet.templates.footer || $templates.dataSet.footer"></div>' +
-                '        </div>' +
-                '    </li>' +
-                '    <li class="tg-typeahead__suggestions-footer"' +
-                '        tg-typeahead-render-template="$templates.suggestedPopup.footer"></li>' +
-                '</ul>');
+                '<ul class="tg-typeahead__suggestions"\
+                     ng-if="$stateHolder.suggestedPopup.opened"\
+                     ng-style="$templates.suggestedPopup.wrapper.style">\
+                    <li class="tg-typeahead__suggestions-header"\
+                        tg-typeahead-render-template="$templates.suggestedPopup.header"></li>\
+                    <li class="tg-typeahead__suggestions-container"\
+                        tg-when-scrolled="$onPopupScrolled($event);">\
+                        <div ng-repeat="$dataSet in $dataSets | filter:{ suggested: { active: true } }">\
+                            <div class="tg-typeahead__suggestions-group-header"\
+                                 tg-typeahead-render-template="$dataSet.templates.header || $templates.dataSet.header"></div>\
+                            <ul class="tg-typeahead__suggestions-group">\
+                                <li class="tg-typeahead__suggestions-group-item"\
+                                    ng-repeat="$match in $dataSet.suggested.matches | limitTo:$dataSet.suggested.limit"\
+                                    ng-class="{ active: $index === $dataSet.suggested.activeIndex, selected: $match.selected, disabled: $match.disabled }">\
+                                    <div tg-typeahead-render-template="$dataSet.templates.item || $templates.dataSet.item"></div>\
+                                </li>\
+                            </ul>\
+                            <div class="tg-typeahead__suggestions-group-footer"\
+                                 tg-typeahead-render-template="$dataSet.templates.footer || $templates.dataSet.footer"></div>\
+                        </div>\
+                    </li>\
+                    <li class="tg-typeahead__suggestions-footer"\
+                        tg-typeahead-render-template="$templates.suggestedPopup.footer"></li>\
+                </ul>');
 
             $templateCache.put('tg-typeahead-suggested-dataSet-item.tpl.html',
                 '<span ng-bind-html="$match.value | tgTrustedHtml"></span>');
 
             $templateCache.put('tg-typeahead-tag-manager.tpl.html',
-                '<div class="tg-typeahead__tag-manager"' +
-                '     ng-class="$templates.tagManager.wrapper.class"' +
-                '     ng-style="$templates.tagManager.wrapper.style">' +
-                '   <div data-ng-if="!$stateHolder.tagTransformed" ng-repeat="$tag in $tags | orderBy:$tagsOrder">' +
-                '       <div tg-typeahead-render-template="$templates.tagManager.tag"></div>' +
-                '   </div>' +
-                '   <div class="tg-typeahead__tags-text" data-ng-if="$stateHolder.tagTransformed">{{ $getTagsText() }}</div>' +
-                '</div>');
+                '<div class="tg-typeahead__tag-manager"\
+                      ng-class="$templates.tagManager.wrapper.class"\
+                      ng-style="$templates.tagManager.wrapper.style">\
+                   <div ng-if="!$stateHolder.tagTransformed"\
+                        ng-repeat="$tag in $tags | orderBy:$tagsOrder">\
+                       <div tg-typeahead-render-template="$templates.tagManager.tag"></div>\
+                   </div>\
+                   <div class="tg-typeahead__tags-text"\
+                        ng-if="$stateHolder.tagTransformed">{{ $getTagsText() }}</div>\
+                </div>');
 
             $templateCache.put('tg-typeahead-tag.tpl.html',
-                '<div class="tg-typeahead__tag">' +
-                '    <span class="tg-typeahead__tag-remove fa fa-times" rel="tooltip"' +
-                '       tooltip-placement="right"' +
-                '       tooltip-html-unsafe="delete"' +
-                '       ng-class="{\'disabled\': $isDisabled()}"' +
-                '       ng-click="!$isDisabled() && $removeTag($tag)"></span>' +
-                '    <span class="tg-typeahead__tag-name" ng-bind-html="$tag.match.value | tgTrustedHtml"></span>' +
-                '</div>');
+                '<div class="tg-typeahead__tag">\
+                    <span class="tg-typeahead__tag-remove fa fa-times" rel="tooltip"\
+                          tooltip-html-unsafe="delete"\
+                          tooltip-placement="right"\
+                          ng-class="{\'disabled\': $isDisabled()}"\
+                          ng-click="!$isDisabled() && $removeTag($tag)"></span>\
+                    <span class="tg-typeahead__tag-name"\
+                          ng-bind-html="$tag.match.value | tgTrustedHtml"></span>\
+                </div>');
         }])
         .directive('tgTypeahead', ['$tgComponents', '$injector', '$http', '$compile', '$parse', '$q', '$timeout', '$document',
             function ($tgComponents, $injector, $http, $compile, $parse, $q, $timeout, $document) {
@@ -1382,7 +1386,7 @@
                 };
             }
         ])
-        .directive('tgTypeaheadTagManager', ['$injector', '$parse', '$q', '$timeout',
+        .directive('tgTypeaheadTagManager', ['$injector', '$parse', '$q', '$timeout', 'tgUtilities',
             function ($injector, $parse, $q, $timeout) {
                 return {
                     restrict: 'A',
@@ -1392,8 +1396,7 @@
                     compile: function (tElement, tAttrs) {
                         var RenderTemplateModel = $injector.get('tgTypeaheadRenderTemplateModel'),
                             MatchModel = $injector.get('tgTypeaheadMatchModel'),
-                            TagModel = $injector.get('tgTypeaheadTagModel'),
-                            utilities = $injector.get('utilities');
+                            TagModel = $injector.get('tgTypeaheadTagModel');
 
                         function prepareOptions(obj, scope, attrs) {
                             var options = {};
@@ -1502,7 +1505,7 @@
 
                             // internal functionality
                             scope.$getTagsText = function () {
-                                return utilities.select(scope.$tags, function (tag) {
+                                return tgUtilities.select(scope.$tags, function (tag) {
                                     return tag.match.value;
                                 }).join(', ');
                             };
@@ -1826,7 +1829,7 @@
                                         removeTags = [];
 
                                     // collect tags which should be added
-                                    utilities.forEach(model, function (it) {
+                                    tgUtilities.forEach(model, function (it) {
                                         var matchedTag = utilities.each(scope.$tags, function (tag) {
                                             if (tag.dataSet.comparator(tag.match.model, it)) {
                                                 return tag;
@@ -1843,8 +1846,8 @@
                                     });
 
                                     // collect tags which should be removed
-                                    utilities.forEach(scope.$tags, function (tag) {
-                                        var matchedItem = utilities.each(model, function (it) {
+                                    tgUtilities.forEach(scope.$tags, function (tag) {
+                                        var matchedItem = tgUtilities.each(model, function (it) {
                                             if (tag.dataSet.comparator(tag.match.model, it)) {
                                                 return it;
                                             }

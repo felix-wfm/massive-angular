@@ -70,9 +70,9 @@
         .factory('tgTerritoryUtilities', tgTerritoryUtilities)
         .directive('tgTerritory', tgTerritory);
 
-    tgTerritoryFilter.$inject = ['$filter', 'utilities'];
+    tgTerritoryFilter.$inject = ['$filter', 'tgUtilities'];
 
-    function tgTerritoryFilter($filter, utilities) {
+    function tgTerritoryFilter($filter, tgUtilities) {
         return function (arr, val) {
             if (!val) {
                 return arr;
@@ -80,7 +80,7 @@
 
             val = val.toLowerCase();
 
-            return utilities.select(arr, function (item) {
+            return tgUtilities.select(arr, function (item) {
                 if (item.name && item.name.toLowerCase().indexOf(val) !== -1) {
                     if (!item.getState().selected) {
                         return item;
@@ -90,9 +90,9 @@
         };
     }
 
-    tgTerritoryUtilities.$inject = ['utilities'];
+    tgTerritoryUtilities.$inject = ['tgUtilities'];
 
-    function tgTerritoryUtilities(utilities) {
+    function tgTerritoryUtilities(tgUtilities) {
         function prepareSource(source) {
             var preparedSource = {
                 all: [],
@@ -102,7 +102,7 @@
                 territories: []
             };
 
-            if (!utilities.empty(source.worldwide)) {
+            if (!tgUtilities.empty(source.worldwide)) {
                 var worldwide = source.worldwide[0],
                     worldState = {
                         selected: false
@@ -120,7 +120,7 @@
                 preparedSource.all.push(preparedSource.worldwide);
             }
 
-            utilities.forEach(source.clusters, function (cluster) {
+            tgUtilities.forEach(source.clusters, function (cluster) {
                 var clusterRegions = [],
                     clusterTerritories = [],
                     clusterState = {
@@ -143,9 +143,9 @@
                         }
                     };
 
-                if (!utilities.empty(source.countries)) {
-                    utilities.forEach(cluster.territory_ids, function (territoryId) {
-                        var territory = utilities.each(source.countries, function (territory) {
+                if (!tgUtilities.empty(source.countries)) {
+                    tgUtilities.forEach(cluster.territory_ids, function (territoryId) {
+                        var territory = tgUtilities.each(source.countries, function (territory) {
                             if (territory.id === territoryId) {
                                 return territory;
                             }
@@ -171,16 +171,16 @@
                             newCluster.getTerritories().push(newTerritory);
                             preparedSource.territories.push(newTerritory);
 
-                            var regions = utilities.select(source.quickpicks, function (region) {
-                                return utilities.each(region.territory_ids, function (territoryId) {
+                            var regions = tgUtilities.select(source.quickpicks, function (region) {
+                                return tgUtilities.each(region.territory_ids, function (territoryId) {
                                     if (territory.id === territoryId) {
                                         return region;
                                     }
                                 });
                             });
 
-                            utilities.forEach(regions, function (region) {
-                                var newRegion = utilities.each(newCluster.getRegions(), function (newRegion) {
+                            tgUtilities.forEach(regions, function (region) {
+                                var newRegion = tgUtilities.each(newCluster.getRegions(), function (newRegion) {
                                     if (newRegion.id === region.id) {
                                         return newRegion;
                                     }
@@ -234,9 +234,9 @@
         };
     }
 
-    tgTerritory.$inject = ['$tgComponents', '$parse', '$document', 'tgTerritoryUtilities', 'utilities'];
+    tgTerritory.$inject = ['$tgComponents', '$parse', '$document', 'tgTerritoryUtilities', 'tgUtilities'];
 
-    function tgTerritory($tgComponents, $parse, $document, tgTerritoryUtilities, utilities) {
+    function tgTerritory($tgComponents, $parse, $document, tgTerritoryUtilities, tgUtilities) {
         return {
             restrict: 'A',
             require: ['tgTerritory', '?ngModel'],
@@ -294,7 +294,7 @@
                     scope.toggleWorldwide = function (state) {
                         var territories = scope.dataHolder.source.territories;
 
-                        utilities.forEach(territories, function (territory) {
+                        tgUtilities.forEach(territories, function (territory) {
                             scope.toggleTerritorySelection(territory.getCluster(), territory, false, state);
                         });
                     };
@@ -325,20 +325,20 @@
                         var clusterTerritories = getClusterTerritories(cluster);
 
                         if (state === true) {
-                            utilities.forEach(clusterTerritories.unselectedTerritories, function (clusterTerritory) {
+                            tgUtilities.forEach(clusterTerritories.unselectedTerritories, function (clusterTerritory) {
                                 scope.toggleTerritorySelection(cluster, clusterTerritory, true, state);
                             });
                         } else if (state === false) {
-                            utilities.forEach(clusterTerritories.selectedTerritories, function (clusterTerritory) {
+                            tgUtilities.forEach(clusterTerritories.selectedTerritories, function (clusterTerritory) {
                                 scope.toggleTerritorySelection(cluster, clusterTerritory, true, state);
                             });
                         } else {
-                            if (!utilities.empty(clusterTerritories.unselectedTerritories)) {
-                                utilities.forEach(clusterTerritories.unselectedTerritories, function (clusterTerritory) {
+                            if (!tgUtilities.empty(clusterTerritories.unselectedTerritories)) {
+                                tgUtilities.forEach(clusterTerritories.unselectedTerritories, function (clusterTerritory) {
                                     scope.toggleTerritorySelection(cluster, clusterTerritory, true, state);
                                 });
                             } else {
-                                utilities.forEach(clusterTerritories.selectedTerritories, function (clusterTerritory) {
+                                tgUtilities.forEach(clusterTerritories.selectedTerritories, function (clusterTerritory) {
                                     scope.toggleTerritorySelection(cluster, clusterTerritory, true, state);
                                 });
                             }
@@ -351,20 +351,20 @@
                         var regionTerritories = getRegionTerritories(region);
 
                         if (state === true) {
-                            utilities.forEach(regionTerritories.unselectedTerritories, function (regionTerritory) {
+                            tgUtilities.forEach(regionTerritories.unselectedTerritories, function (regionTerritory) {
                                 scope.toggleTerritorySelection(cluster, regionTerritory, true, state);
                             });
                         } else if (state === false) {
-                            utilities.forEach(regionTerritories.selectedTerritories, function (regionTerritory) {
+                            tgUtilities.forEach(regionTerritories.selectedTerritories, function (regionTerritory) {
                                 scope.toggleTerritorySelection(cluster, regionTerritory, true, state);
                             });
                         } else {
-                            if (!utilities.empty(regionTerritories.unselectedTerritories)) {
-                                utilities.forEach(regionTerritories.unselectedTerritories, function (regionTerritory) {
+                            if (!tgUtilities.empty(regionTerritories.unselectedTerritories)) {
+                                tgUtilities.forEach(regionTerritories.unselectedTerritories, function (regionTerritory) {
                                     scope.toggleTerritorySelection(cluster, regionTerritory, true, state);
                                 });
                             } else {
-                                utilities.forEach(regionTerritories.selectedTerritories, function (regionTerritory) {
+                                tgUtilities.forEach(regionTerritories.selectedTerritories, function (regionTerritory) {
                                     scope.toggleTerritorySelection(cluster, regionTerritory, true, state);
                                 });
                             }
@@ -435,7 +435,7 @@
                         var selectedTerritories = [],
                             unselectedTerritories = [];
 
-                        utilities.forEach(cluster.getTerritories(), function (territory) {
+                        tgUtilities.forEach(cluster.getTerritories(), function (territory) {
                             var territoryState = territory.getState();
 
                             if (territoryState.selected) {
@@ -455,7 +455,7 @@
                         var selectedTerritories = [],
                             unselectedTerritories = [];
 
-                        utilities.forEach(region.getTerritories(), function (territory) {
+                        tgUtilities.forEach(region.getTerritories(), function (territory) {
                             var territoryState = territory.getState();
 
                             if (territoryState.selected) {
@@ -473,15 +473,15 @@
 
                     function updateCluster(cluster) {
                         var clusterState = cluster.getState();
-                        clusterState.selected = utilities.empty(getClusterTerritories(cluster).unselectedTerritories);
+                        clusterState.selected = tgUtilities.empty(getClusterTerritories(cluster).unselectedTerritories);
 
                         updateClusterRegions(cluster);
                     }
 
                     function updateClusterRegions(cluster) {
-                        utilities.forEach(cluster.getRegions(), function (region) {
+                        tgUtilities.forEach(cluster.getRegions(), function (region) {
                             var regionState = region.getState();
-                            regionState.selected = utilities.empty(getRegionTerritories(region).unselectedTerritories);
+                            regionState.selected = tgUtilities.empty(getRegionTerritories(region).unselectedTerritories);
                         });
                     }
 
@@ -492,7 +492,7 @@
 
                         model.length = 0;
 
-                        utilities.forEach(source.clusters, function (cluster) {
+                        tgUtilities.forEach(source.clusters, function (cluster) {
                             var clusterState = cluster.getState();
 
                             if (clusterState.selectedTerritories > 0) {
