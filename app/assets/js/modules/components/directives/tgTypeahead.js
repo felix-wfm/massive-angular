@@ -1830,7 +1830,7 @@
 
                                     // collect tags which should be added
                                     tgUtilities.forEach(model, function (it) {
-                                        var matchedTag = utilities.each(scope.$tags, function (tag) {
+                                        var matchedTag = tgUtilities.each(scope.$tags, function (tag) {
                                             if (tag.dataSet.comparator(tag.match.model, it)) {
                                                 return tag;
                                             }
