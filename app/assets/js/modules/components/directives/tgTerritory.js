@@ -252,8 +252,13 @@
             return preparedSource;
         }
 
+        function getTerritoriesString() {
+            return undefined;
+        }
+
         return {
-            prepareSource: prepareSource
+            prepareSource: prepareSource,
+            getTerritoriesString: getTerritoriesString
         };
     }
 
@@ -313,6 +318,10 @@
                             dirty: false
                         },
                         disabled: false
+                    };
+
+                    scope.getTerritoriesString = function () {
+                        return tgTerritoryUtilities.getTerritoriesString();
                     };
 
                     scope.$isDisabled = function () {

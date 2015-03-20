@@ -3,10 +3,13 @@
 
     angular.module('tg.components')
         .run(['$templateCache', function ($templateCache) {
+            'use strict';
+
             $templateCache.put('tg-tabset.tmpl.html',
                 '<div class="tabbable" data-ng-class="tgTabsetWrapClass">' +
                 '   <ul class="nav nav-tabs">' +
                 '       <li data-ng-repeat="$tab in $tabs"' +
+                '           data-ng-show="$tab.visible"' +
                 '           data-ng-class="{ \'active\': isActiveTab($tab), \'disabled\': $tab.disabled }">' +
                 '           <a href="" data-ng-click="setActiveTab($tab);">' +
                 '               <span data-tg-tabset-render-template="$tab.template.header">{{ $tab.title || \'&nbsp;\' }}</span>' +
@@ -16,6 +19,7 @@
                 '   <div class="tab-content" data-ng-repeat="$tab in $tabs">' +
                 '       <div class="tab-pane"' +
                 '            data-ng-if="$tab.initiated"' +
+                '            data-ng-show="$tab.visible"' +
                 '            data-tg-tabset-render-template="$tab.template.content"' +
                 '            data-ng-class="{ \'active\': isActiveTab($tab) }"></div>' +
                 '   </div>' +
@@ -24,6 +28,8 @@
         }])
         .directive('tgTabset', ['$tgComponents', '$http', '$compile', '$parse', '$templateCache', '$q',
             function ($tgComponents, $http, $compile, $parse, $templateCache, $q) {
+                'use strict';
+
                 return {
                     restrict: 'A',
                     scope: {
@@ -41,8 +47,8 @@
 
                             scope.$tabs = ctrl.$tabs;
 
-                            scope.setActiveTab = function (tab) {
-                                ctrl.setActiveTab(tab);
+                            scope.setActiveTab = function (tab, ignoreError) {
+                                ctrl.setActiveTab(tab, ignoreError);
                             };
 
                             scope.isActiveTab = function (tab) {
@@ -51,11 +57,12 @@
 
                             var tplUrl = $parse(scope.tgTabsetTemplateUrl)(parentScope) || 'tg-tabset.tmpl.html';
 
-                            $http.get(tplUrl, {cache: $templateCache}).success(function (tplContent) {
-                                var compiled = $compile(tplContent.trim())(scope);
+                            $http.get(tplUrl, {cache: $templateCache})
+                                .success(function (tplContent) {
+                                    var compiled = $compile(tplContent.trim())(scope);
 
-                                element.prepend(compiled);
-                            });
+                                    element.prepend(compiled);
+                                });
                         };
                     },
                     controller: ['$scope', '$element', '$attrs',
@@ -80,7 +87,7 @@
                                 return activeTab;
                             };
 
-                            this.setActiveTab = function (tab) {
+                            this.setActiveTab = function (tab, ignoreError) {
                                 var defer = $q.defer();
 
                                 if (tab && tabs.indexOf(tab) !== -1) {
@@ -102,6 +109,10 @@
                                                     }
 
                                                     if (activeTab) {
+                                                        if (activeTab.destroyOnDeselect) {
+                                                            activeTab.initiated = false;
+                                                        }
+
                                                         evt = {
                                                             tab: activeTab
                                                         };
@@ -142,7 +153,7 @@
                                     } else {
                                         defer.reject();
                                     }
-                                } else {
+                                } else if (!!ignoreError) {
                                     defer.reject();
 
                                     throw new Error('Invalid tab.');
@@ -170,6 +181,47 @@
                                             _this.setActiveTab(tab);
                                         }
                                     });
+                            };
+
+                            this.removeTab = function (tab, forced) {
+                                if (checkName(tab.name)) {
+                                    throw new Error('Tab with name `' + tab.name + '` doesn\'t exist in tabset.');
+                                }
+
+                                function fRemove() {
+                                    var idx = tabs.indexOf(tab);
+
+                                    if (idx > -1) {
+                                        tabs.splice(idx, 1);
+
+                                        if (!forced) {
+                                            _this.trigger('$onTabRemoved', evt);
+
+                                            if (tab === _this.getActiveTab()) {
+                                                idx--;
+
+                                                if (idx < 0) {
+                                                    idx = 0;
+                                                }
+
+                                                _this.setActiveTab(_this.getTabByIndex(idx, true), true);
+                                            }
+                                        }
+                                    }
+                                }
+
+                                if (!forced) {
+                                    var evt = {
+                                        tab: tab
+                                    };
+
+                                    _this.trigger('$onTabRemoving', evt)
+                                        .then(function () {
+                                            fRemove();
+                                        });
+                                } else {
+                                    fRemove();
+                                }
                             };
 
                             this.getTabByIndex = function (index, ignoreError) {
@@ -202,6 +254,12 @@
 
                             this.setDefaultTab = function (name) {
                                 activeTabName = name;
+                            };
+
+                            this.displayNext = function (startIndex, endIndex) {
+                                tabs.forEach(function (tab, index) {
+                                    tab.visible = (startIndex <= index && index <= endIndex);
+                                });
                             };
 
                             $tgComponents.$addInstance(this);
@@ -237,14 +295,20 @@
                                 if (tpl.hasOwnProperty('templateUrl')) {
                                     element.html(null);
 
+                                    if (!tpl.renderScope) {
+                                        tpl.renderScope = scope;
+                                    }
+
                                     $http.get(tpl.templateUrl, {cache: $templateCache})
                                         .success(function (tplContent) {
                                             var compiled = $compile(tplContent.trim());
 
-                                            element.append(compiled(tpl.scope));
+                                            element.append(compiled(tpl.renderScope));
                                         });
                                 } else if (tpl.hasOwnProperty('$attachTo')) {
                                     element.html(null);
+
+                                    tpl.renderScope = scope;
 
                                     tpl.$attachTo(element, scope, null);
                                 }
@@ -261,6 +325,8 @@
         ])
         .directive('tgTab', ['$parse',
             function ($parse) {
+                'use strict';
+
                 return {
                     restrict: 'A',
                     require: '^tgTabset',
@@ -272,6 +338,7 @@
                         tgTabInitiated: '@',
                         tgTabDisabled: '@',
                         tgTabAutoRefresh: '@',
+                        tgTabDestroyOnDeselect: '@',
                         tgTabIsolated: '@',
                         tgTabTemplateUrl: '@'
                     },
@@ -290,11 +357,25 @@
                                     .then(function () {
                                         attachedToElm = elm;
 
-                                        var newScope = (scope.tgTabIsolated === 'true') ? scp : scope.$parent.$new();
+                                        var newScope = scp;
 
-                                        newScope.$external = scope.$parent;
+                                        if (scope.tgTabIsolated !== 'true') {
+                                            newScope = scope.$parent.$new();
+                                            newScope.$tab = tab;
+                                        } else {
+                                            newScope.$external = scope.$parent;
+                                        }
+
                                         newScope.$tabset = tgTabsetCtrl;
-                                        newScope.$tab = tab;
+                                        tab.$scope = newScope;
+
+                                        if (tab.template.header) {
+                                            var headerScope = tab.template.header.renderScope;
+
+                                            if (headerScope) {
+                                                headerScope.$tab = tab;
+                                            }
+                                        }
 
                                         $transcludeFn(newScope, function (contents) {
                                             elm.append(contents);
@@ -328,6 +409,10 @@
 
                             // remove tab block definition from markup
                             element.remove();
+
+                            scope.$on('$destroy', function () {
+                                tgTabsetCtrl.removeTab(tab, true);
+                            });
                         }
 
                         return {
@@ -339,20 +424,24 @@
                         function ($scope, $element, $attrs) {
                             var parsedContext = $parse($scope.tgTabContext);
 
-                            $scope.$tab = {
+                            var tab = $scope.$tab = {
                                 name: $scope.tgTab,
                                 title: $scope.tgTabTitle,
                                 template: {
                                     header: ($scope.tgTabTemplateUrl) ? {
                                         templateUrl: $scope.tgTabTemplateUrl,
-                                        scope: $scope.$parent
+                                        renderScope: $scope.$parent.$new()
                                     } : null,
-                                    content: {}
+                                    content: {
+                                        renderScope: null
+                                    }
                                 },
                                 context: null,
                                 initiated: ($scope.tgTabInitiated === 'true'),
                                 disabled: ($scope.tgTabDisabled === 'true'),
+                                visible: true,
                                 autoRefresh: ($scope.tgTabAutoRefresh === 'true'),
+                                destroyOnDeselect: ($scope.tgTabDestroyOnDeselect === 'true'),
                                 refreshContext: function (reInit) {
                                     var context = parsedContext($scope.$parent) || {};
 
@@ -361,10 +450,16 @@
                                     }
 
                                     this.context = context
+                                },
+                                show: function () {
+                                    this.visible = true;
+                                },
+                                hide: function () {
+                                    this.visible = false;
                                 }
                             };
 
-                            $scope.$tab.refreshContext();
+                            tab.refreshContext();
                         }
                     ]
                 };
