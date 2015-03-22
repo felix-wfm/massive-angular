@@ -1387,7 +1387,7 @@
             }
         ])
         .directive('tgTypeaheadTagManager', ['$injector', '$parse', '$q', '$timeout', 'tgUtilities',
-            function ($injector, $parse, $q, $timeout) {
+            function ($injector, $parse, $q, $timeout, tgUtilities) {
                 return {
                     restrict: 'A',
                     require: ['tgTypeahead', '?ngModel'],

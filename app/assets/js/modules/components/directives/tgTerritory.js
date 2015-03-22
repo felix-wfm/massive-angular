@@ -38,6 +38,9 @@
                             </div>\
                             <button class="tg-territory__btn pull-right">Close</button>\
                         </div>\
+                        <div class="tg-territory__popup-header">\
+                            <span>{{getTerritoriesString()}}</span>\
+                        </div>\
                         <div class="tg-territory__popup-body">\
                             <div class="tg-territory__clusters">\
                                 <div class="tg-territory__cluster" ng-repeat="cluster in dataHolder.source.clusters">\
@@ -252,12 +255,89 @@
             return preparedSource;
         }
 
-        function getTerritoriesString() {
+        function updateModel(source, model) {
+            var selectedClusters = 0;
+
+            model.length = 0;
+
+            tgUtilities.forEach(source.clusters, function (cluster) {
+                var clusterState = cluster.getState();
+
+                if (clusterState.selectedTerritories > 0) {
+                    if (clusterState.selectedTerritories === cluster.getTerritories().length) {
+                        model.push(cluster);
+                        selectedClusters++;
+                    } else {
+                        cluster.getTerritories().forEach(function (territory) {
+                            var territoryState = territory.getState();
+
+                            if (territoryState.selected) {
+                                model.push(territory);
+                            }
+                        });
+                    }
+                }
+            });
+
+            if (selectedClusters === source.clusters.length) {
+                model.length = 0;
+                model.push(source.worldwide);
+            }
+        }
+
+        function getTerritoriesString(source) {
+            var selectedClusters = tgUtilities.select(source.clusters, function (cluster) {
+                if (cluster.getState().selected) {
+                    return cluster;
+                }
+            });
+
+            if (selectedClusters.length === source.clusters.length && source.worldwide) {
+                return source.worldwide.name;
+            } else {
+                var selectedRegions = tgUtilities.select(source.regions, function (region) {
+                    if (region.getState().selected && !region.getCluster().getState().selected) {
+                        return region;
+                    }
+                });
+
+                var selectedTerritories = tgUtilities.select(source.territories, function (territory) {
+                    if (territory.getState().selected) {
+                        var inSelectedCluster = !!tgUtilities.each(selectedClusters, function (cluster) {
+                            if (cluster.getTerritories().indexOf(territory) !== -1) {
+                                return true;
+                            }
+                        });
+
+                        if (!inSelectedCluster) {
+                            var inSelectedRegion = !!tgUtilities.each(selectedRegions, function (region) {
+                                if (region.getTerritories().indexOf(territory) !== -1) {
+                                    return true;
+                                }
+                            });
+
+                            if (!inSelectedRegion) {
+                                return territory;
+                            }
+                        }
+                    }
+                });
+
+                var selected = selectedClusters.concat(selectedRegions).concat(selectedTerritories);
+
+                return tgUtilities.select(selected, function (s) {
+                    return s.name;
+                }).join(' and ');
+            }
+
+            console.log('Exlusion', source);
+
             return undefined;
         }
 
         return {
             prepareSource: prepareSource,
+            updateModel: updateModel,
             getTerritoriesString: getTerritoriesString
         };
     }
@@ -321,7 +401,7 @@
                     };
 
                     scope.getTerritoriesString = function () {
-                        return tgTerritoryUtilities.getTerritoriesString();
+                        return tgTerritoryUtilities.getTerritoriesString(scope.dataHolder.source);
                     };
 
                     scope.$isDisabled = function () {
@@ -591,35 +671,7 @@
                     }
 
                     function updateModel() {
-                        var source = scope.dataHolder.source,
-                            model = scope.dataHolder.model,
-                            selectedClusters = 0;
-
-                        model.length = 0;
-
-                        tgUtilities.forEach(source.clusters, function (cluster) {
-                            var clusterState = cluster.getState();
-
-                            if (clusterState.selectedTerritories > 0) {
-                                if (clusterState.selectedTerritories === cluster.getTerritories().length) {
-                                    model.push(cluster);
-                                    selectedClusters++;
-                                } else {
-                                    cluster.getTerritories().forEach(function (territory) {
-                                        var territoryState = territory.getState();
-
-                                        if (territoryState.selected) {
-                                            model.push(territory);
-                                        }
-                                    });
-                                }
-                            }
-                        });
-
-                        if (selectedClusters === source.clusters.length) {
-                            model.length = 0;
-                            model.push(source.worldwide);
-                        }
+                        tgTerritoryUtilities.updateModel(scope.dataHolder.source, scope.dataHolder.model);
                     }
 
                     function getTypeaheadCtrl() {
