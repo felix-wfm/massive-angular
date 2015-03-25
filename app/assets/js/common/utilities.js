@@ -2,11 +2,11 @@
     'use strict';
 
     angular.module('tg.components')
-        .factory('utilities', Utilities);
+        .factory('tgUtilities', tgUtilities);
 
-    Utilities.$inject = [];
+    tgUtilities.$inject = [];
 
-    function Utilities() {
+    function tgUtilities() {
         function isType(obj, typeStr) {
             return (Object.prototype.toString.call(obj) === typeStr);
         }
