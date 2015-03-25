@@ -32,7 +32,8 @@
                         tgTabsetTemplateUrl: '@',
                         tgTabsetWrapClass: '@',
                         tgTabsetActiveTab: '@',
-                        tgTabsetContext: '@'
+                        tgTabsetContext: '@',
+                        tgTabsetSelected: '@'
                     },
                     compile: function () {
                         return function postLink(scope, element) {
@@ -114,6 +115,8 @@
                                                     evt = {
                                                         tab: activeTab
                                                     };
+
+                                                    $parse($attrs.tgTabsetSelected)($scope.$parent, evt);
 
                                                     _this.trigger('$onTabSelected', evt);
 
