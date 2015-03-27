@@ -2,96 +2,68 @@
     'use strict';
 
     angular.module('tg.common')
-        .run(['$templateCache', '$rootScope', '$state', function ($templateCache, $rootScope, $state) {
+        .run(['$templateCache', function ($templateCache) {
             $templateCache.put('ui-viewport.tpl.html',
                 '<i class="fa fa-spinner fa-spin fa-3x" ng-show="$inTransition"></i><div ui-view="{{ $viewName }}" ng-hide="$inTransition"></div>');
-
-            $rootScope.$on('$stateChangeStart', function (evt, toState, toParams, fromState, fromParams) {
-                $rootScope.$$uiRouterTransition = {
-                    from: {
-                        state: fromState,
-                        params: fromParams
-                    },
-                    to: {
-                        state: toState,
-                        params: toParams
-                    }
-                };
-
-                console.log('$stateChangeStart', $rootScope.$$uiRouterTransition);
-            });
-
-            $rootScope.$on('$stateChangeSuccess', function () {
-                $rootScope.$$uiRouterTransition = undefined;
-
-                console.log('$stateChangeSuccess');
-            });
-
-            $rootScope.$on('$stateChangeError', function () {
-                $rootScope.$$uiRouterTransition = undefined;
-
-                console.log('$stateChangeError');
-            });
         }])
         .config(['$stateProvider', function ($stateProvider) {
-            $stateProvider.decorator('views', function (state, getViews) {
-                var views = getViews(state);
+            $stateProvider.decorator('path', function (state, getPath) {
+                var path = getPath(state);
 
-                state.self.$$views = [];
+                state.self.onEnter = function () {
+                    //state.$inTransition = true;
 
-                for (var name in views) {
-                    if (views.hasOwnProperty(name)) {
-                        state.self.$$views.push(name);
-                    }
-                }
+                    //console.log(state);
+                };
 
-                return views;
+                return path;
             });
         }])
-        .directive('uiViewport', ['$rootScope', '$interpolate', '$state', function ($rootScope, $interpolate, $state) {
+        .directive('uiViewport', ['$state', '$interpolate', function ($state, $interpolate) {
             return {
                 restrict: 'A',
                 templateUrl: 'ui-viewport.tpl.html',
                 scope: true,
                 compile: function () {
-                    function getUiViewName(scope, attrs, element) {
-                        var name = $interpolate(attrs.uiViewport || attrs.name || '')(scope),
-                            inherited = element.inheritedData('$uiView');
-
-                        return (name.indexOf('@') >= 0) ? name : (name + '@' + (inherited ? inherited.state.name : ''));
-                    }
-
                     function preLink(scope, element, attrs) {
-                        var name = getUiViewName(scope, attrs, element);
-
-                        scope.$viewName = attrs.uiViewport;
-
-                        scope.$name = name;
+                        scope.$viewName = attrs.uiViewport || '';
                         scope.$inTransition = false;
 
-                        var unwatchUiRouterTransition = $rootScope.$watch('$$uiRouterTransition', function (transition) {
-                            if (transition) {
-                                var toState = transition.to.state;
+                        function getUiViewName(scope, attrs, element, $interpolate) {
+                            var name = $interpolate(attrs.uiView || attrs.name || '')(scope);
+                            var inherited = element.inheritedData('$uiView');
+                            return name.indexOf('@') >= 0 ?  name :  (name + '@' + (inherited ? inherited.state.name : ''));
+                        }
 
-                                if (toState.$$views && toState.$$views.indexOf(name) !== -1) {
-                                    scope.$inTransition = true;
-                                    console.log('inTransition:on', name);
-                                } else {
-                                    toState = toState.parent;
+                        scope.$on('$stateChangeStart', function (evt, toState, toParams, fromState, fromParams) {
+                            scope.$inTransition = true;
 
-                                    if (!toState || (toState.$$views && toState.$$views.indexOf(name) !== -1)) {
-                                        scope.$inTransition = true;
-                                        console.log('inTransition:on', name);
-                                    }
+                            var current = $state.$current,
+                                name = getUiViewName(scope, attrs, element, $interpolate),
+                                locals  = current && current.locals[name];
+
+                            console.log(name, locals);
+                        });
+
+                        scope.$on('$stateChangeSuccess', function (evt, toState, toParams, fromState, fromParams) {
+                            /*if (scope.$viewName === '') {
+                                if (!toState.hasOwnProperty('views') || toState.views.hasOwnProperty('@')) {
+
                                 }
                             } else {
-                                scope.$inTransition = false;
-                                console.log('inTransition:off', name);
+                                if (toState.hasOwnProperty('views') && toState.views.hasOwnProperty(scope.$viewName)) {
+
+                                }
                             }
+
+                            console.log(toState);*/
+                        });
+
+                        scope.$on('$viewContentLoaded', function () {
+                            scope.$inTransition = false;
                         });
 
                         scope.$on('$destroy', function () {
-                            unwatchUiRouterTransition();
                         });
                     }
 

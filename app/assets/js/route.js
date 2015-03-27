@@ -46,8 +46,8 @@ angular.module('app')
                     url: '/tab1',
                     views: {
                         tab1: {
-                            templateUrl: './view/components/partials/tgTypeahead/example1.html',
-                            resolve: {
+                            template: '<span>Tab 1</span>',
+                            asyncResolve: {
                                 data: ['$q', '$timeout', function ($q, $timeout) {
                                     var defer = $q.defer();
 
@@ -65,7 +65,7 @@ angular.module('app')
                     url: '/tab2',
                     views: {
                         tab2: {
-                            templateUrl: './view/components/partials/tgTypeahead/example2.html'
+                            template: '<span>Tab 2</span>'
                         }
                     }
                 })
