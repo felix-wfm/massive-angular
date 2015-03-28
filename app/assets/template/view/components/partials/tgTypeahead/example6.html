@@ -1,0 +1,51 @@
+<div tg-typeahead=""
+     tg-typeahead-placeholder="Search..."
+     tg-typeahead-display-clean="true"
+     tg-typeahead-tag-manager=""
+     tg-typeahead-max-lines="4"
+     tg-typeahead-postponed-selection="true"
+     tg-typeahead-tag-ascending-order="true"
+     ng-model="__typeahead.model6">
+    <div tg-typeahead-popup-header="">
+        <div class="tg-typeahead__suggestions-header-inner"
+             ng-if="!$dataSets[0].data.noResults">
+            <a href=""
+               ng-click="!hasAllSelected($dataSets[0]) ? selectAll($dataSets[0], $event) : deselectAll($dataSets[0], $event);">
+                <i class="fa" style="width: 14px;" ng-class="{ 'fa-check': hasAllSelected($dataSets[0]) }"></i>
+                <strong>Select All ({{ $dataSets[0].queried.matches.length }})</strong>
+            </a>
+        </div>
+    </div>
+    <div tg-typeahead-data-set="result as result.name for result in getResultsAsync($viewValue, $context)">
+        <div tg-typeahead-data-set-item="">
+            <div class="tg-typeahead__suggestions-group-item-inner clearfix"
+                 tg-highlight-html="{{ $term }}"
+                 tg-highlight-html-compile="true">
+                <div class="tg-typeahead__item-right">
+                    {{ $match.data.code }}
+                </div>
+                <div class="tg-typeahead__item-left tg-typeahead__text-overflow nomargins">
+                    <i class="fa" style="width: 14px;" ng-class="{ 'fa-check': $match.selected }"></i>
+                    {{ $match.data.name }}
+                </div>
+            </div>
+        </div>
+        <div tg-typeahead-data-set-footer="">
+            <div class="tg-typeahead__suggestions-footer-inner"
+                 ng-if="$dataSet.data.noResults">
+                No results for <strong>{{ $term }}</strong>
+            </div>
+        </div>
+    </div>
+    <div tg-typeahead-popup-footer="">
+        <div class="tg-typeahead__suggestions-footer-border clearfix" style="padding: 10px;"
+             ng-if="!$dataSet[0].data.noResults">
+            <button class="pull-right"
+                    ng-click="applySelections($dataSets);">Apply
+            </button>
+            <button class="pull-right" style="margin-right: 5px;"
+                    ng-click="$closePopup();">Cancel
+            </button>
+        </div>
+    </div>
+</div>

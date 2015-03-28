@@ -12,7 +12,8 @@
             model2: null,
             model3: [],
             model4: [],
-            model5: null
+            model5: null,
+            model6: []
         };
 
         $scope.suggestions = [{
@@ -24,6 +25,10 @@
             "code": "MG",
             "name": "Madagascar"
         }];
+
+        $scope.comparator = function (matchA, matchB) {
+            return (matchA.code === matchB.code);
+        };
 
         $scope.control = {
             typeahead: {
