@@ -99,6 +99,26 @@
             return (!empty(arr) && arr.indexOf(val) > -1);
         }
 
+        function naturalJoin(list, token, lastToken) {
+            if (!empty(list)) {
+                var joinedList = [];
+
+                list = list.slice();
+                token = token || ', ';
+                lastToken = lastToken || ' and ';
+
+                var lastItem = list.pop();
+
+                if (list.length) {
+                    joinedList.push(list.join(token));
+                }
+
+                joinedList.push(lastItem);
+
+                return joinedList.join(lastToken);
+            }
+        }
+
         return {
             isObject: isObject,
             isArray: isArray,
@@ -107,7 +127,8 @@
             each: each,
             select: select,
             empty: empty,
-            has: has
+            has: has,
+            naturalJoin: naturalJoin
         };
     }
 })();

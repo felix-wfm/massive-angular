@@ -160,10 +160,10 @@
                             RenderTemplateModel = $injector.get('tgTypeaheadRenderTemplateModel'),
                             MatchModel = $injector.get('tgTypeaheadMatchModel'),
                             SuggestedMatchModel = $injector.get('tgTypeaheadSuggestedMatchModel'),
-                            utilities = $injector.get('utilities');
+                            tgUtilities = $injector.get('tgUtilities');
 
                         function isPromise(ref) {
-                            return (ref && ref.hasOwnProperty('then') && utilities.isFunction(ref.then));
+                            return (ref && ref.hasOwnProperty('then') && tgUtilities.isFunction(ref.then));
                         }
 
                         function prepareOptions(obj, attrs) {
@@ -375,7 +375,7 @@
                             scope.selectDataSet = function (dataSet, $event) {
                                 var dataSetSource;
 
-                                utilities.forEach(scope.$dataSets, function (_dataSet) {
+                                tgUtilities.forEach(scope.$dataSets, function (_dataSet) {
                                     dataSetSource = scope.getDataSetSource(_dataSet);
 
                                     if (dataSetSource) {
@@ -571,7 +571,7 @@
                                 var collectedPromises = scope.$dataHolder.collectedPromises;
 
                                 if (collectedPromises.length > 0) {
-                                    utilities.forEach(collectedPromises, function (promise) {
+                                    tgUtilities.forEach(collectedPromises, function (promise) {
                                         if (promise.hasOwnProperty('cancelRequest')) {
                                             promise.cancelRequest();
                                         }
@@ -580,7 +580,7 @@
                                     clearCollectedPromises();
                                 }
 
-                                utilities.forEach(scope.$dataSets, function (dataSet) {
+                                tgUtilities.forEach(scope.$dataSets, function (dataSet) {
                                     dataSet.queried.inProgress = false;
                                     if (dataSet.suggested) {
                                         dataSet.suggested.inProgress = false;
@@ -595,7 +595,7 @@
                             scope.$setActiveMatch = function (dataSet, index) {
                                 var dataSetSource;
 
-                                utilities.forEach(scope.$dataSets, function (_dataSet) {
+                                tgUtilities.forEach(scope.$dataSets, function (_dataSet) {
                                     dataSetSource = scope.getDataSetSource(_dataSet);
 
                                     if (dataSetSource) {
@@ -636,7 +636,7 @@
                                 if (scope.$dataSets.length > 1) {
                                     _model = scope.$getModel() || {};
 
-                                    utilities.forEach(scope.$dataSets, function (_dataSet) {
+                                    tgUtilities.forEach(scope.$dataSets, function (_dataSet) {
                                         _model[_dataSet.name] = (_dataSet === dataSet) ? model : null;
                                     });
                                 }
@@ -651,7 +651,7 @@
                                 if (multiple) {
                                     model = {};
 
-                                    utilities.forEach(scope.$dataSets, function (dataSet) {
+                                    tgUtilities.forEach(scope.$dataSets, function (dataSet) {
                                         model[dataSet.name] = null;
                                     });
                                 }
@@ -671,11 +671,11 @@
                                 if (single) {
                                     activeDataSet = scope.$dataSets[0];
                                 } else if (multiple) {
-                                    if (!model || utilities.isArray(model) || !utilities.isObject(model)) {
+                                    if (!model || tgUtilities.isArray(model) || !tgUtilities.isObject(model)) {
                                         model = {};
                                     }
 
-                                    utilities.forEach(scope.$dataSets, function (dataSet) {
+                                    tgUtilities.forEach(scope.$dataSets, function (dataSet) {
                                         if (!model.hasOwnProperty(dataSet.name)) {
                                             model[dataSet.name] = null;
                                         }
@@ -770,7 +770,7 @@
                                         dataSetSource;
 
                                     if (!scope.selectedDataSet) {
-                                        utilities.forEach(scope.$dataSets, function (dataSet) {
+                                        tgUtilities.forEach(scope.$dataSets, function (dataSet) {
                                             dataSetSource = scope.getDataSetSource(dataSet);
 
                                             if (dataSetSource && dataSetSource.activeIndex !== -1) {
@@ -859,7 +859,7 @@
                                     collectedPromises.push(rcp.promise);
                                 }
 
-                                utilities.forEach(scope.$dataSets, function (dataSet) {
+                                tgUtilities.forEach(scope.$dataSets, function (dataSet) {
                                     dataSet.data = {};
 
                                     var sourceLocals = {
@@ -886,7 +886,7 @@
 
                                                 var matches = response;
 
-                                                utilities.forEach(matches, function (match) {
+                                                tgUtilities.forEach(matches, function (match) {
                                                     var item = sourceModel.$getItem(match, parentScope),
                                                         matchObj = new MatchModel(match, item.model, item.value);
 
@@ -916,7 +916,7 @@
                                     collectedPromises.push(scp.promise);
                                 }
 
-                                utilities.forEach(scope.$dataSets, function (dataSet) {
+                                tgUtilities.forEach(scope.$dataSets, function (dataSet) {
                                     if (!dataSet.suggested || !dataSet.suggested.source) {
                                         return;
                                     }
@@ -943,7 +943,7 @@
 
                                             var matches = response;
 
-                                            utilities.forEach(matches, function (match) {
+                                            tgUtilities.forEach(matches, function (match) {
                                                 var item = sourceModel.$getItem(match, parentScope),
                                                     matchObj = new SuggestedMatchModel(match, item.model, item.value);
 
@@ -1117,9 +1117,9 @@
                             scope.$on('$destroy', function () {
                                 scope.$onOutsideClick();
 
-                                utilities.forEach(scope.$templates, function (tplType) {
+                                tgUtilities.forEach(scope.$templates, function (tplType) {
                                     if (tplType) {
-                                        utilities.forEach(tplType, function (tpl) {
+                                        tgUtilities.forEach(tplType, function (tpl) {
                                             if (tpl && tpl.appendToBody && tpl.element) {
                                                 tpl.element.remove();
                                             }
@@ -1229,7 +1229,7 @@
                     compile: function (tElement, tAttrs) {
                         var SOURCE_EXPR = /^\s*(.*?)(?:\s+as\s+(.*?))?\s+for\s+(?:([\$\w][\$\w\d]*))\s+in\s+(.*)$/;
 
-                        var utilities = $injector.get('utilities');
+                        var tgUtilities = $injector.get('tgUtilities');
 
                         function sourceExprParse(expression) {
                             var match = expression.match(SOURCE_EXPR);
@@ -1280,7 +1280,7 @@
 
                             var comparator = scope.tgTypeaheadDataSetComparator();
 
-                            if (utilities.isFunction(comparator)) {
+                            if (tgUtilities.isFunction(comparator)) {
                                 scope.$dataSet.comparator = comparator;
                             }
 
@@ -1389,8 +1389,8 @@
                 };
             }
         ])
-        .directive('tgTypeaheadTagManager', ['$injector', '$parse', '$q', '$timeout', 'tgUtilities',
-            function ($injector, $parse, $q, $timeout, tgUtilities) {
+        .directive('tgTypeaheadTagManager', ['$injector', '$parse', '$q', '$timeout',
+            function ($injector, $parse, $q, $timeout) {
                 return {
                     restrict: 'A',
                     require: ['tgTypeahead', '?ngModel'],
@@ -1399,7 +1399,8 @@
                     compile: function (tElement, tAttrs) {
                         var RenderTemplateModel = $injector.get('tgTypeaheadRenderTemplateModel'),
                             MatchModel = $injector.get('tgTypeaheadMatchModel'),
-                            TagModel = $injector.get('tgTypeaheadTagModel');
+                            TagModel = $injector.get('tgTypeaheadTagModel'),
+                            tgUtilities = $injector.get('tgUtilities');
 
                         function prepareOptions(obj, scope, attrs) {
                             var options = {};
@@ -1542,7 +1543,7 @@
 
                                                     if (!options.allowDuplicates) {
                                                         // check if match model already exist in model
-                                                        idx = utilities.each(src, function (it, i) {
+                                                        idx = tgUtilities.each(src, function (it, i) {
                                                             if (tag.dataSet.comparator(it, tag.match.model)) {
                                                                 return i;
                                                             }
@@ -1604,7 +1605,7 @@
                                                     var idx = -1;
 
                                                     // check if match model already exist in model
-                                                    utilities.each(src, function (it, i) {
+                                                    tgUtilities.each(src, function (it, i) {
                                                         if (tag.dataSet.comparator(it, tag.match.model)) {
                                                             return i;
                                                         }
@@ -1631,7 +1632,7 @@
                             };
 
                             scope.$findTag = function (match) {
-                                return utilities.each(scope.$tags, function (tag) {
+                                return tgUtilities.each(scope.$tags, function (tag) {
                                     if (tag.dataSet.comparator(tag.match.model, match.model)) {
                                         return tag;
                                     }
@@ -1670,7 +1671,7 @@
                                 var dataSetSource = scope.getDataSetSource(dataSet);
 
                                 if (dataSetSource) {
-                                    utilities.forEach(dataSetSource.matches, function (match, index) {
+                                    tgUtilities.forEach(dataSetSource.matches, function (match, index) {
                                         if (!match.selected) {
                                             scope.$selectMatch(dataSet, index, match, $event);
                                         }
@@ -1688,7 +1689,7 @@
                                 var dataSetSource = scope.getDataSetSource(dataSet);
 
                                 if (dataSetSource) {
-                                    utilities.forEach(dataSetSource.matches, function (match, index) {
+                                    tgUtilities.forEach(dataSetSource.matches, function (match, index) {
                                         if (match.selected) {
                                             scope.$selectMatch(dataSet, index, match, $event);
                                         }
@@ -1697,11 +1698,11 @@
                             };
 
                             scope.applySelections = function (dataSets) {
-                                utilities.forEach(dataSets, function (dataSet) {
+                                tgUtilities.forEach(dataSets, function (dataSet) {
                                     var dataSetSource = scope.getDataSetSource(dataSet);
 
                                     if (dataSetSource) {
-                                        utilities.forEach(dataSetSource.matches, function (match) {
+                                        tgUtilities.forEach(dataSetSource.matches, function (match) {
                                             var tag = scope.$findTag(match);
 
                                             if (match.selected) {
@@ -1857,11 +1858,11 @@
                                         }
                                     });
 
-                                    utilities.forEach(removeTags, function (tag) {
+                                    tgUtilities.forEach(removeTags, function (tag) {
                                         scope.$removeTag(tag, 'ModelUpdate');
                                     });
 
-                                    utilities.forEach(addTags, function (tag) {
+                                    tgUtilities.forEach(addTags, function (tag) {
                                         scope.$addTag(tag, 'ModelUpdate');
                                     });
                                 };
@@ -1883,7 +1884,7 @@
                                         }
                                     });
 
-                                    utilities.forEach(scope.$dataSets, function (dataSet) {
+                                    tgUtilities.forEach(scope.$dataSets, function (dataSet) {
                                         var fnGetModel = function () {
                                             return currentModel && currentModel[dataSet.name];
                                         };
@@ -1905,7 +1906,7 @@
                                 } else if (multiple) {
                                     model = {};
 
-                                    utilities.forEach(scope.$dataSets, function (dataSet) {
+                                    tgUtilities.forEach(scope.$dataSets, function (dataSet) {
                                         model[dataSet.name] = [];
                                     });
                                 }
@@ -1930,11 +1931,11 @@
                                         });
                                     }
                                 } else if (multiple) {
-                                    if (!model || utilities.isArray(model) || !utilities.isObject(model)) {
+                                    if (!model || tgUtilities.isArray(model) || !tgUtilities.isObject(model)) {
                                         model = {};
                                     }
 
-                                    utilities.forEach(scope.$dataSets, function (dataSet) {
+                                    tgUtilities.forEach(scope.$dataSets, function (dataSet) {
                                         if (!model.hasOwnProperty(dataSet.name) || !Array.isArray(model[dataSet.name])) {
                                             model[dataSet.name] = [];
                                         }
@@ -1949,11 +1950,11 @@
                                 }
 
                                 if (activeSources.length > 0) {
-                                    utilities.forEach(activeSources, function (activeSource) {
+                                    tgUtilities.forEach(activeSources, function (activeSource) {
                                         var dataSet = activeSource.dataSet,
                                             sourceModel = dataSet.queried;
 
-                                        utilities.forEach(activeSource.source, function (match) {
+                                        tgUtilities.forEach(activeSource.source, function (match) {
                                             var item = sourceModel.$getItem(match, scope.$parent),
                                                 match = new MatchModel(match, item.model, item.value),
                                                 tag = new TagModel(match, dataSet.build());
@@ -1999,7 +2000,7 @@
                             tgTypeaheadCtrl.getTags = function () {
                                 var tags = [];
 
-                                utilities.forEach(scope.$tags, function (tag) {
+                                tgUtilities.forEach(scope.$tags, function (tag) {
                                     tags.push(tag);
                                 });
 
@@ -2116,7 +2117,7 @@
             }
         ])
         .factory('tgTypeaheadRenderTemplateModel', ['$injector', function ($injector) {
-            var utilities = $injector.get('utilities');
+            var tgUtilities = $injector.get('tgUtilities');
 
             function RenderTemplateModelFactory(name, templateUrl, renderCallback) {
                 this.name = name;
@@ -2137,7 +2138,7 @@
             RenderTemplateModelFactory.prototype.render = function (element) {
                 this.element = element;
 
-                if (utilities.isFunction(this.callback)) {
+                if (tgUtilities.isFunction(this.callback)) {
                     this.callback(this);
                 }
             };

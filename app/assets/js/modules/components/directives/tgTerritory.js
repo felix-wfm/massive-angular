@@ -86,6 +86,7 @@
         }])
         .filter('tgTerritoryFilter', tgTerritoryFilter)
         .factory('tgTerritoryUtilities', tgTerritoryUtilities)
+        .factory('tgTerritoryService', tgTerritoryService)
         .directive('tgTerritory', tgTerritory);
 
     tgTerritoryFilter.$inject = ['tgUtilities'];
@@ -108,9 +109,9 @@
         };
     }
 
-    tgTerritoryUtilities.$inject = ['tgUtilities'];
+    tgTerritoryUtilities.$inject = ['$log', 'tgUtilities'];
 
-    function tgTerritoryUtilities(tgUtilities) {
+    function tgTerritoryUtilities($log, tgUtilities) {
         function prepareSource(source, sourceTypes) {
             var preparedSource = {
                 all: [],
@@ -250,7 +251,7 @@
                 Array.prototype.push.apply(preparedSource.all, preparedSource.territories);
             }
 
-            console.log(preparedSource);
+            $log.debug(preparedSource);
 
             return preparedSource;
         }
@@ -283,62 +284,209 @@
                 model.length = 0;
                 model.push(source.worldwide);
             }
+
+            console.log(tgUtilities.select(model, function (item) {
+                return item.id;
+            }).join(', '));
         }
 
-        function getTerritoriesString(source) {
-            var selectedClusters = tgUtilities.select(source.clusters, function (cluster) {
-                if (cluster.getState().selected) {
-                    return cluster;
-                }
-            });
-
-            if (selectedClusters.length === source.clusters.length && source.worldwide) {
-                return source.worldwide.name;
-            } else {
-                var selectedRegions = tgUtilities.select(source.regions, function (region) {
-                    if (region.getState().selected && !region.getCluster().getState().selected) {
-                        return region;
+        function getTerritoriesLabel(territories, data) {
+            if (!tgUtilities.empty(territories) && data) {
+                var territoriesIds = tgUtilities.select(territories, function (territory) {
+                    if (tgUtilities.isObject(territory)) {
+                        territory = territory.id;
                     }
+
+                    return parseInt(territory, 10) || undefined;
                 });
 
-                var selectedTerritories = tgUtilities.select(source.territories, function (territory) {
-                    if (territory.getState().selected) {
-                        var inSelectedCluster = !!tgUtilities.each(selectedClusters, function (cluster) {
-                            if (cluster.getTerritories().indexOf(territory) !== -1) {
-                                return true;
+                if (!tgUtilities.empty(territoriesIds)) {
+                    // check if worldwide is used
+                    if (data.worldwide && territoriesIds.indexOf(data.worldwide.id) !== -1) {
+                        return data.worldwide.name;
+                    }
+
+                    // get used clusters
+                    var usedClusters = tgUtilities.select(data.clusters, function (cluster) {
+                        if (territoriesIds.indexOf(cluster.id) !== -1) {
+                            return cluster;
+                        }
+                    });
+
+                    // split used regions into countries and add them to list of used countries
+                    tgUtilities.forEach(data.regions, function (region) {
+                        if (territoriesIds.indexOf(region.id) !== -1) {
+                            tgUtilities.forEach(region.getTerritories(), function (country) {
+                                if (territoriesIds.indexOf(country.id) === -1) {
+                                    territoriesIds.push(country.id);
+                                }
+                            });
+                        }
+                    });
+
+                    // get unused countries
+                    var unusedCountries = tgUtilities.select(data.territories, function (country) {
+                        if (territoriesIds.indexOf(country.id) === -1) {
+                            var usedCountry = tgUtilities.each(usedClusters, function (cluster) {
+                                return tgUtilities.each(cluster.getTerritories(), function (usedCountry) {
+                                    if (usedCountry.id === country.id) {
+                                        return usedCountry;
+                                    }
+                                });
+                            });
+
+                            if (!usedCountry) {
+                                return country;
                             }
+                        }
+                    });
+
+                    // if number of unused countries for worldwide is less than 11, then display `Worldwide excluding [<unused country>]`
+                    if (unusedCountries.length && unusedCountries.length < 11) {
+                        var unusedCountriesNames = tgUtilities.select(unusedCountries, function (unusedCountry) {
+                            return unusedCountry.name;
                         });
 
-                        if (!inSelectedCluster) {
-                            var inSelectedRegion = !!tgUtilities.each(selectedRegions, function (region) {
-                                if (region.getTerritories().indexOf(territory) !== -1) {
-                                    return true;
+                        return 'Worldwide excluding ' + tgUtilities.naturalJoin(unusedCountriesNames, ', ', ' and ');
+                    }
+
+                    // group used countries by cluster
+                    var incompleteClusters = {};
+
+                    tgUtilities.forEach(data.territories, function (country) {
+                        if (territoriesIds.indexOf(country.id) !== -1) {
+                            var cluster = country.getCluster();
+
+                            // ignore country if its cluster is already used
+                            if (territoriesIds.indexOf(cluster.id) === -1) {
+                                // create a new cluster entry in incomplete clusters collection
+                                if (!incompleteClusters.hasOwnProperty(cluster.id)) {
+                                    incompleteClusters[cluster.id] = {
+                                        cluster: cluster,
+                                        countries: []
+                                    };
+                                }
+
+                                // collect countries for specific cluster
+                                incompleteClusters[cluster.id].countries.push(country);
+                            }
+                        }
+                    });
+
+                    tgUtilities.select(incompleteClusters, function (incompleteCluster, key) {
+                        var allClusterCountries = incompleteCluster.cluster.getTerritories();
+
+                        if (allClusterCountries.length === incompleteCluster.countries.length) {
+                            usedClusters.push(incompleteCluster.cluster);
+                            incompleteClusters[key] = undefined;
+                        }
+                    });
+
+                    if (usedClusters.length === data.clusters.length && data.worldwide) {
+                        return data.worldwide.name;
+                    }
+
+                    var usedClustersNames = tgUtilities.select(usedClusters, function (usedCluster) {
+                        return usedCluster.name;
+                    });
+
+                    // sort used clusters in alphabetical order
+                    usedClustersNames.sort();
+
+                    // get clusters labels
+                    var unusedClustersNames = tgUtilities.select(incompleteClusters, function (incompleteCluster) {
+                        if (!incompleteCluster) return;
+
+                        var allClusterCountries = incompleteCluster.cluster.getTerritories(),
+                            unusedClusterCountriesNumber = allClusterCountries.length - incompleteCluster.countries.length;
+
+                        // if cluster has all countries used, then display `<cluster name>`
+                        if (unusedClusterCountriesNumber === 0) {
+                            return incompleteCluster.cluster.name;
+                        }
+
+                        // if number of unused countries for cluster is less than 11, then display `<cluster name> excluding [<unused country>]`
+                        if (unusedClusterCountriesNumber < 11) {
+                            // get all unused countries names for current cluster
+                            var unusedClusterCountriesNames = tgUtilities.select(allClusterCountries, function (country) {
+                                var usedCountry = tgUtilities.each(incompleteCluster.countries, function (usedCountry) {
+                                    if (country.id === usedCountry.id) {
+                                        return usedCountry;
+                                    }
+                                });
+
+                                if (!usedCountry) {
+                                    return country.name;
                                 }
                             });
 
-                            if (!inSelectedRegion) {
-                                return territory;
-                            }
+                            // sort unused countries in alphabetical order
+                            unusedClusterCountriesNames.sort();
+
+                            return incompleteCluster.cluster.name + ' excluding ' + tgUtilities.naturalJoin(unusedClusterCountriesNames, ', ', ' and ');
+                        } else {
+                            var usedClusterCountriesNames = tgUtilities.select(incompleteCluster.countries, function (usedCountry) {
+                                return usedCountry.name;
+                            });
+
+                            // sort used countries in alphabetical order
+                            usedClusterCountriesNames.sort();
+
+                            return tgUtilities.naturalJoin(usedClusterCountriesNames, ', ', ' and ');
                         }
-                    }
-                });
+                    });
 
-                var selected = selectedClusters.concat(selectedRegions).concat(selectedTerritories);
-
-                return tgUtilities.select(selected, function (s) {
-                    return s.name;
-                }).join(' and ');
+                    return usedClustersNames.concat(unusedClustersNames).join(', ');
+                }
             }
-
-            console.log('Exlusion', source);
-
-            return undefined;
         }
 
         return {
             prepareSource: prepareSource,
             updateModel: updateModel,
-            getTerritoriesString: getTerritoriesString
+            getTerritoriesLabel: getTerritoriesLabel
+        };
+    }
+
+    tgTerritoryService.$inject = ['$http', '$q'];
+
+    function tgTerritoryService($http, $q) {
+        var cachedTerritories = {
+            all: undefined
+        };
+
+        function get() {
+            var defer = $q.defer();
+
+            if (!cachedTerritories.all) {
+                $http.get('api/territories.json')
+                    .success(function (response) {
+                        cachedTerritories.all = response;
+                        defer.resolve(cachedTerritories.all);
+                    })
+                    .error(function () {
+                        defer.reject();
+                    });
+            } else {
+                defer.resolve(cachedTerritories.all);
+            }
+
+            return defer.promise;
+        }
+
+        function clear(type) {
+            if (type) {
+                if (cachedTerritories.hasOwnProperty(type)) {
+                    cachedTerritories[type] = undefined;
+                }
+            } else {
+                cachedTerritories.all = undefined;
+            }
+        }
+
+        return {
+            get: get,
+            clear: clear
         };
     }
 
@@ -401,7 +549,13 @@
                     };
 
                     scope.getTerritoriesString = function () {
-                        return tgTerritoryUtilities.getTerritoriesString(scope.dataHolder.source);
+                        var selectedCountriesIds = tgUtilities.select(scope.dataHolder.source.territories, function (country) {
+                            if (country.getState().selected) {
+                                return country.id;
+                            }
+                        });
+
+                        return tgTerritoryUtilities.getTerritoriesLabel(selectedCountriesIds, scope.dataHolder.source);
                     };
 
                     scope.$isDisabled = function () {
