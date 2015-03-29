@@ -119,6 +119,16 @@
             }
         }
 
+        function sort(arr, fn) {
+            if (!empty(arr) && isFunction(fn)) {
+                arr.sort(function (it1, it2) {
+                    var r = fn(it1, it2);
+
+                    return (r > 0) ? 1 : ((r < 0) ? -1 : 0);
+                });
+            }
+        }
+
         return {
             isObject: isObject,
             isArray: isArray,
@@ -128,7 +138,8 @@
             select: select,
             empty: empty,
             has: has,
-            naturalJoin: naturalJoin
+            naturalJoin: naturalJoin,
+            sort: sort
         };
     }
 })();
