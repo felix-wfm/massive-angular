@@ -558,7 +558,7 @@
             if (sort) {
                 tgUtilities.sort(territories, function (t1, t2) {
                     if (t1.type === t2.type) {
-                        return (t1.name > t2.name) ? 1 : ((t1.name  < t2.name) ? -1 : 0);
+                        return (t1.name > t2.name) ? 1 : ((t1.name < t2.name) ? -1 : 0);
                     }
 
                     var k1 = 0, k2 = 0;
@@ -602,154 +602,148 @@
             return territories;
         }
 
-        function getTerritoriesLabel(territories, data) {
-            if (!tgUtilities.empty(territories) && data) {
-                var territoriesIds = tgUtilities.select(territories, function (territory) {
-                    if (tgUtilities.isObject(territory)) {
-                        territory = territory.id;
-                    }
+        function getTerritoriesLabel(territoriesIds, data, skipValidation) {
+            if (!skipValidation) {
+                territoriesIds = validateTerritories(territoriesIds, data);
+            }
 
-                    return parseInt(territory, 10) || undefined;
+            if (!tgUtilities.empty(territoriesIds) && data) {
+                // check if worldwide is used
+                if (data.worldwide && territoriesIds.indexOf(data.worldwide.id) !== -1) {
+                    return data.worldwide.name;
+                }
+
+                // get used clusters
+                var usedClusters = tgUtilities.select(data.clusters, function (cluster) {
+                    if (territoriesIds.indexOf(cluster.id) !== -1) {
+                        return cluster;
+                    }
                 });
 
-                if (!tgUtilities.empty(territoriesIds)) {
-                    // check if worldwide is used
-                    if (data.worldwide && territoriesIds.indexOf(data.worldwide.id) !== -1) {
-                        return data.worldwide.name;
+                // split used regions into countries and add them to list of used countries
+                tgUtilities.forEach(data.regions, function (region) {
+                    if (territoriesIds.indexOf(region.id) !== -1) {
+                        tgUtilities.forEach(region.getCountries(), function (country) {
+                            if (territoriesIds.indexOf(country.id) === -1) {
+                                territoriesIds.push(country.id);
+                            }
+                        });
                     }
+                });
 
-                    // get used clusters
-                    var usedClusters = tgUtilities.select(data.clusters, function (cluster) {
-                        if (territoriesIds.indexOf(cluster.id) !== -1) {
-                            return cluster;
-                        }
-                    });
-
-                    // split used regions into countries and add them to list of used countries
-                    tgUtilities.forEach(data.regions, function (region) {
-                        if (territoriesIds.indexOf(region.id) !== -1) {
-                            tgUtilities.forEach(region.getCountries(), function (country) {
-                                if (territoriesIds.indexOf(country.id) === -1) {
-                                    territoriesIds.push(country.id);
+                // get unused countries
+                var unusedCountries = tgUtilities.select(data.countries, function (country) {
+                    if (territoriesIds.indexOf(country.id) === -1) {
+                        var usedCountry = tgUtilities.each(usedClusters, function (cluster) {
+                            return tgUtilities.each(cluster.getCountries(), function (usedCountry) {
+                                if (usedCountry.id === country.id) {
+                                    return usedCountry;
                                 }
                             });
+                        });
+
+                        if (!usedCountry) {
+                            return country;
                         }
+                    }
+                });
+
+                // if number of unused countries for worldwide is less than 11, then display `Worldwide excluding [<unused country>]`
+                if (unusedCountries.length && unusedCountries.length < 11) {
+                    var unusedCountriesNames = tgUtilities.select(unusedCountries, function (unusedCountry) {
+                        return unusedCountry.name;
                     });
 
-                    // get unused countries
-                    var unusedCountries = tgUtilities.select(data.countries, function (country) {
-                        if (territoriesIds.indexOf(country.id) === -1) {
-                            var usedCountry = tgUtilities.each(usedClusters, function (cluster) {
-                                return tgUtilities.each(cluster.getCountries(), function (usedCountry) {
-                                    if (usedCountry.id === country.id) {
-                                        return usedCountry;
-                                    }
-                                });
+                    return 'Worldwide excluding ' + tgUtilities.naturalJoin(unusedCountriesNames, ', ', ' and ');
+                }
+
+                // group used countries by cluster
+                var incompleteClusters = {};
+
+                tgUtilities.forEach(data.countries, function (country) {
+                    if (territoriesIds.indexOf(country.id) !== -1) {
+                        var cluster = country.getCluster();
+
+                        // ignore country if its cluster is already used
+                        if (territoriesIds.indexOf(cluster.id) === -1) {
+                            // create a new cluster entry in incomplete clusters collection
+                            if (!incompleteClusters.hasOwnProperty(cluster.id)) {
+                                incompleteClusters[cluster.id] = {
+                                    cluster: cluster,
+                                    countries: []
+                                };
+                            }
+
+                            // collect countries for specific cluster
+                            incompleteClusters[cluster.id].countries.push(country);
+                        }
+                    }
+                });
+
+                tgUtilities.select(incompleteClusters, function (incompleteCluster, key) {
+                    var allClusterCountries = incompleteCluster.cluster.getCountries();
+
+                    if (allClusterCountries.length === incompleteCluster.countries.length) {
+                        usedClusters.push(incompleteCluster.cluster);
+                        incompleteClusters[key] = undefined;
+                    }
+                });
+
+                if (usedClusters.length === data.clusters.length && data.worldwide) {
+                    return data.worldwide.name;
+                }
+
+                var usedClustersNames = tgUtilities.select(usedClusters, function (usedCluster) {
+                    return usedCluster.name;
+                });
+
+                // sort used clusters in alphabetical order
+                usedClustersNames.sort();
+
+                // get clusters labels
+                var unusedClustersNames = tgUtilities.select(incompleteClusters, function (incompleteCluster) {
+                    if (!incompleteCluster) return;
+
+                    var allClusterCountries = incompleteCluster.cluster.getCountries(),
+                        unusedClusterCountriesNumber = allClusterCountries.length - incompleteCluster.countries.length;
+
+                    // if cluster has all countries used, then display `<cluster name>`
+                    if (unusedClusterCountriesNumber === 0) {
+                        return incompleteCluster.cluster.name;
+                    }
+
+                    // if number of unused countries for cluster is less than 11, then display `<cluster name> excluding [<unused country>]`
+                    if (unusedClusterCountriesNumber < 11) {
+                        // get all unused countries names for current cluster
+                        var unusedClusterCountriesNames = tgUtilities.select(allClusterCountries, function (country) {
+                            var usedCountry = tgUtilities.each(incompleteCluster.countries, function (usedCountry) {
+                                if (country.id === usedCountry.id) {
+                                    return usedCountry;
+                                }
                             });
 
                             if (!usedCountry) {
-                                return country;
+                                return country.name;
                             }
-                        }
-                    });
-
-                    // if number of unused countries for worldwide is less than 11, then display `Worldwide excluding [<unused country>]`
-                    if (unusedCountries.length && unusedCountries.length < 11) {
-                        var unusedCountriesNames = tgUtilities.select(unusedCountries, function (unusedCountry) {
-                            return unusedCountry.name;
                         });
 
-                        return 'Worldwide excluding ' + tgUtilities.naturalJoin(unusedCountriesNames, ', ', ' and ');
+                        // sort unused countries in alphabetical order
+                        unusedClusterCountriesNames.sort();
+
+                        return incompleteCluster.cluster.name + ' excluding ' + tgUtilities.naturalJoin(unusedClusterCountriesNames, ', ', ' and ');
+                    } else {
+                        var usedClusterCountriesNames = tgUtilities.select(incompleteCluster.countries, function (usedCountry) {
+                            return usedCountry.name;
+                        });
+
+                        // sort used countries in alphabetical order
+                        usedClusterCountriesNames.sort();
+
+                        return tgUtilities.naturalJoin(usedClusterCountriesNames, ', ', ' and ');
                     }
+                });
 
-                    // group used countries by cluster
-                    var incompleteClusters = {};
-
-                    tgUtilities.forEach(data.countries, function (country) {
-                        if (territoriesIds.indexOf(country.id) !== -1) {
-                            var cluster = country.getCluster();
-
-                            // ignore country if its cluster is already used
-                            if (territoriesIds.indexOf(cluster.id) === -1) {
-                                // create a new cluster entry in incomplete clusters collection
-                                if (!incompleteClusters.hasOwnProperty(cluster.id)) {
-                                    incompleteClusters[cluster.id] = {
-                                        cluster: cluster,
-                                        countries: []
-                                    };
-                                }
-
-                                // collect countries for specific cluster
-                                incompleteClusters[cluster.id].countries.push(country);
-                            }
-                        }
-                    });
-
-                    tgUtilities.select(incompleteClusters, function (incompleteCluster, key) {
-                        var allClusterCountries = incompleteCluster.cluster.getCountries();
-
-                        if (allClusterCountries.length === incompleteCluster.countries.length) {
-                            usedClusters.push(incompleteCluster.cluster);
-                            incompleteClusters[key] = undefined;
-                        }
-                    });
-
-                    if (usedClusters.length === data.clusters.length && data.worldwide) {
-                        return data.worldwide.name;
-                    }
-
-                    var usedClustersNames = tgUtilities.select(usedClusters, function (usedCluster) {
-                        return usedCluster.name;
-                    });
-
-                    // sort used clusters in alphabetical order
-                    usedClustersNames.sort();
-
-                    // get clusters labels
-                    var unusedClustersNames = tgUtilities.select(incompleteClusters, function (incompleteCluster) {
-                        if (!incompleteCluster) return;
-
-                        var allClusterCountries = incompleteCluster.cluster.getCountries(),
-                            unusedClusterCountriesNumber = allClusterCountries.length - incompleteCluster.countries.length;
-
-                        // if cluster has all countries used, then display `<cluster name>`
-                        if (unusedClusterCountriesNumber === 0) {
-                            return incompleteCluster.cluster.name;
-                        }
-
-                        // if number of unused countries for cluster is less than 11, then display `<cluster name> excluding [<unused country>]`
-                        if (unusedClusterCountriesNumber < 11) {
-                            // get all unused countries names for current cluster
-                            var unusedClusterCountriesNames = tgUtilities.select(allClusterCountries, function (country) {
-                                var usedCountry = tgUtilities.each(incompleteCluster.countries, function (usedCountry) {
-                                    if (country.id === usedCountry.id) {
-                                        return usedCountry;
-                                    }
-                                });
-
-                                if (!usedCountry) {
-                                    return country.name;
-                                }
-                            });
-
-                            // sort unused countries in alphabetical order
-                            unusedClusterCountriesNames.sort();
-
-                            return incompleteCluster.cluster.name + ' excluding ' + tgUtilities.naturalJoin(unusedClusterCountriesNames, ', ', ' and ');
-                        } else {
-                            var usedClusterCountriesNames = tgUtilities.select(incompleteCluster.countries, function (usedCountry) {
-                                return usedCountry.name;
-                            });
-
-                            // sort used countries in alphabetical order
-                            usedClusterCountriesNames.sort();
-
-                            return tgUtilities.naturalJoin(usedClusterCountriesNames, ', ', ' and ');
-                        }
-                    });
-
-                    return usedClustersNames.concat(unusedClustersNames).join(', ');
-                }
+                return usedClustersNames.concat(unusedClustersNames).join(', ');
             }
         }
 
