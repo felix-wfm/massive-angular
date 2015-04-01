@@ -603,10 +603,17 @@
         function getTerritoriesLabel(territoriesIds, data) {
             territoriesIds = validateTerritories(territoriesIds, data, true);
 
-            if (!tgUtilities.empty(territoriesIds) && data) {
+            if (!tgUtilities.empty(territoriesIds)) {
+                // if all countries are used, then display `Worldwide`
+                if (territoriesIds.length === data.countries.length && data.worldwide) {
+                    return data.worldwide.name;
+                }
+
                 var numberOfUnusedCountries = data.countries.length - territoriesIds.length;
 
-                // if number of unused countries for worldwide is less than 11, then display `Worldwide excluding [<unused country>]`
+                // worldwide exclusion rule:
+                //      - number of unused countries should be less or equal than 10
+                // if worldwide exclusion rule is applicable, then display `Worldwide excluding [<unused country>]`
                 if (numberOfUnusedCountries > 0 && numberOfUnusedCountries <= 10) {
                     var unusedCountriesNames = tgUtilities.select(data.countries, function (country) {
                         if (territoriesIds.indexOf(country.id) === -1) {
@@ -614,22 +621,22 @@
                         }
                     });
 
-                    // sort unused countries in alphabetical order
+                    // sort excluded countries in alphabetical order
                     unusedCountriesNames.sort();
 
                     return data.worldwide.name + ' excluding ' + tgUtilities.naturalJoin(unusedCountriesNames, ', ', ' and ');
                 }
 
-                var usedCountries = getTerritories(territoriesIds, data);
-
-                // if all countries are used, then display `Worldwide`
-                if (usedCountries.length === data.countries.length) {
-                    return data.worldwide.name;
-                }
+                var usedCountries = getTerritories(territoriesIds, data),
+                    groupedCountriesByCluster = {},
+                    fullClusters = [],
+                    incompleteClusters = [],
+                    usedClustersNames,
+                    unusedClustersNames,
+                    remainedTerritoriesIds = [],
+                    remainedTerritoriesNames;
 
                 // group used countries by cluster
-                var groupedCountriesByCluster = {};
-
                 tgUtilities.forEach(usedCountries, function (country) {
                     var cluster = country.getCluster();
 
@@ -645,9 +652,7 @@
                     groupedCountriesByCluster[cluster.id].countries.push(country);
                 });
 
-                var fullClusters = [],
-                    incompleteClusters = [];
-
+                // split clusters into full selected and incomplete
                 tgUtilities.select(groupedCountriesByCluster, function (clusterMap) {
                     var allClusterCountries = clusterMap.cluster.getCountries();
 
@@ -658,19 +663,23 @@
                     }
                 });
 
-                var usedClustersNames = tgUtilities.select(fullClusters, function (usedCluster) {
+                // collect used clusters names
+                usedClustersNames = tgUtilities.select(fullClusters, function (usedCluster) {
                     return usedCluster.name;
                 });
 
-                // sort used clusters in alphabetical order
-                usedClustersNames.sort();
-
-                var incompleteClustersNames = tgUtilities.select(incompleteClusters, function (incompleteCluster) {
+                // collect incomplete clusters names
+                unusedClustersNames = tgUtilities.select(incompleteClusters, function (incompleteCluster) {
                     var allClusterCountries = incompleteCluster.cluster.getCountries(),
-                        numberOfUnusedCountries = allClusterCountries.length - incompleteCluster.countries.length;
+                        numberOfAllCountries = allClusterCountries.length;
+                        numberOfUnusedCountries = numberOfAllCountries - incompleteCluster.countries.length;
 
-                    // if number of unused countries for cluster is less than 11, then display `<cluster name> excluding [<unused country>]`
-                    if (numberOfUnusedCountries > 0 && numberOfUnusedCountries <= 10) {
+                    // cluster exclusion rule:
+                    //      - number of total countries in cluster should be more than 10
+                    //      - number of unused countries should be less or equal than 10
+                    //      - number of unused countries should be less than 25% of total countries in cluster
+                    // if cluster exclusion rule is applicable, then display `<cluster name> excluding [<unused country>]`
+                    if (numberOfAllCountries > 10 && numberOfUnusedCountries > 0 && numberOfUnusedCountries <= 10 && (numberOfUnusedCountries / numberOfAllCountries) < 0.25) {
                         // get all unused countries names for current cluster
                         var unusedClusterCountriesNames = tgUtilities.select(allClusterCountries, function (country) {
                             var usedCountry = tgUtilities.each(incompleteCluster.countries, function (usedCountry) {
@@ -684,23 +693,38 @@
                             }
                         });
 
-                        // sort unused countries in alphabetical order
+                        // sort excluded countries in alphabetical order
                         unusedClusterCountriesNames.sort();
 
                         return incompleteCluster.cluster.name + ' excluding ' + tgUtilities.naturalJoin(unusedClusterCountriesNames, ', ', ' and ');
                     } else {
-                        var usedCountriesNames = tgUtilities.select(incompleteCluster.countries, function (usedCountry) {
-                            return usedCountry.name;
+                        tgUtilities.forEach(incompleteCluster.countries, function (country) {
+                            remainedTerritoriesIds.push(country.id);
                         });
-
-                        // sort used countries in alphabetical order
-                        usedCountriesNames.sort();
-
-                        return tgUtilities.naturalJoin(usedCountriesNames, ', ', ' and ');
                     }
                 });
 
-                return usedClustersNames.concat(incompleteClustersNames).join(', ');
+                if (!tgUtilities.empty(remainedTerritoriesIds)) {
+                    remainedTerritoriesIds = validateTerritories(remainedTerritoriesIds, data);
+
+                    var remainedTerritories = getTerritories(remainedTerritoriesIds, data, true);
+
+                    // collect remained territories names
+                    remainedTerritoriesNames = tgUtilities.select(remainedTerritories, function (territory) {
+                       return territory.name;
+                    });
+                }
+
+                var territoriesNames = usedClustersNames.concat(unusedClustersNames);
+
+                // sort territories in alphabetical order
+                territoriesNames.sort();
+
+                if (remainedTerritoriesNames) {
+                    territoriesNames = territoriesNames.concat(remainedTerritoriesNames);
+                }
+
+                return territoriesNames.join(', ');
             }
         }
 
