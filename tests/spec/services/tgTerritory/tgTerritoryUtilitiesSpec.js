@@ -33,6 +33,14 @@ describe('Unit: tgTerritoryUtilities', function () {
                 expect(preparedSource.countries.length).toBe(200);
 
                 expect(preparedSource.worldwide).toBeTruthy();
+
+                // test clusters order
+                expect(preparedSource.clusters[0].id).toBe(10005);
+                expect(preparedSource.clusters[1].id).toBe(10000);
+                expect(preparedSource.clusters[2].id).toBe(10004);
+                expect(preparedSource.clusters[3].id).toBe(10002);
+                expect(preparedSource.clusters[4].id).toBe(10003);
+                expect(preparedSource.clusters[5].id).toBe(10001);
             });
 
         specHelper.flushHttpBackend();

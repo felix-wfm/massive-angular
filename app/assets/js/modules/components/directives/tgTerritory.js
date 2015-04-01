@@ -16,6 +16,7 @@
                             <div tg-typeahead-data-set="territory as territory.name for territory in dataHolder.source.all | tgTerritoryFilter:$viewValue">\
                                 <div tg-typeahead-data-set-item="">\
                                     <span>{{$match.data.name}}</span>\
+                                    <p ng-if="$match.data.type === \'worldwide\' || $match.data.type === \'cluster\' || $match.data.type === \'region\'">{{$match.data.getCountries().length}} countries</p>\
                                 </div> \
                             </div>\
                             <div tg-typeahead-popup-footer="">\
@@ -37,7 +38,7 @@
                             <button class="tg-territory__btn pull-right">Close</button>\
                         </div>\
                         <div class="tg-territory__popup-header">\
-                            <span>{{getTerritoriesString()}}</span>\
+                            <span>{{stateHolder.territoriesLabel}}</span>\
                         </div>\
                         <div class="tg-territory__popup-body">\
                             <div class="tg-territory__clusters">\
@@ -58,7 +59,7 @@
                                             <ul class="tg-territory__cluster-countries">\
                                                 <li class="tg-territory__cluster-country" \
                                                     ng-repeat="country in cluster.getCountries() track by country.id" \
-                                                    ng-click="toggleTerritorySelection(cluster, country);" \
+                                                    ng-click="toggleCountrySelection(cluster, country);" \
                                                     ng-class="{\'m-active\':country.getState().selected}">\
                                                     {{country.name}}\
                                                 </li>\
@@ -100,7 +101,7 @@
                           tooltip-html-unsafe="delete"\
                           tooltip-placement="right"\
                           ng-class="{\'disabled\': $isDisabled()}"\
-                          ng-click="!$isDisabled() && $removeTag($tag)"></span>\
+                          ng-click="!$isDisabled() && $removeTag($tag); $event.stopPropagation();"></span>\
                     <span class="tg-typeahead__tag-name"\
                           ng-bind-html="::$tag.match.value | tgTrustedHtml"></span>\
                 </div>');
@@ -133,6 +134,8 @@
     tgTerritoryUtilities.$inject = ['$log', 'tgUtilities'];
 
     function tgTerritoryUtilities($log, tgUtilities) {
+        var CLUSTERS_ORDER = [10005, 10000, 10004, 10002, 10003, 10001];
+
         function WorldwideTerritoryModel(id, name, raw) {
             var countries = [],
                 state = {
@@ -275,6 +278,11 @@
                         }
                     });
 
+                    // sort ascending clusters
+                    tgUtilities.sort(data.clusters, function (t1, t2) {
+                        return CLUSTERS_ORDER.indexOf(t1.id) - CLUSTERS_ORDER.indexOf(t2.id);
+                    });
+
                     Array.prototype.push.apply(data.all, data.clusters);
                 }
 
@@ -306,6 +314,18 @@
                                 cluster.getRegions().push(regionModel);
                             }
                         }
+                    });
+
+                    // sort ascending regions
+                    tgUtilities.sort(data.regions, function (t1, t2) {
+                        return (t1.name > t2.name) ? 1 : ((t1.name < t2.name) ? -1 : 0);
+                    });
+
+                    tgUtilities.forEach(data.clusters, function (cluster) {
+                        // sort ascending regions inside cluster
+                        tgUtilities.sort(cluster.getRegions(), function (t1, t2) {
+                            return (t1.name > t2.name) ? 1 : ((t1.name < t2.name) ? -1 : 0);
+                        });
                     });
 
                     Array.prototype.push.apply(data.all, data.regions);
@@ -354,6 +374,18 @@
                                 }
                             }
                         }
+                    });
+
+                    // sort ascending countries
+                    tgUtilities.sort(data.countries, function (t1, t2) {
+                        return (t1.name > t2.name) ? 1 : ((t1.name < t2.name) ? -1 : 0);
+                    });
+
+                    tgUtilities.forEach(data.clusters, function (cluster) {
+                        // sort ascending countries inside cluster
+                        tgUtilities.sort(cluster.getCountries(), function (t1, t2) {
+                            return (t1.name > t2.name) ? 1 : ((t1.name < t2.name) ? -1 : 0);
+                        });
                     });
 
                     Array.prototype.push.apply(data.all, data.countries);
@@ -839,10 +871,12 @@
                             isOpen: false,
                             dirty: false
                         },
-                        disabled: false
+                        disabled: false,
+                        territoriesLabel: undefined
                     };
 
                     scope.getTerritoriesString = function () {
+                        console.log('getTerritoriesString');
                         var source = scope.dataHolder.source,
                             selectedCountriesIds = tgUtilities.select(source.countries, function (country) {
                                 if (country.getState().selected) {
@@ -884,6 +918,10 @@
                     scope.openPopup = function () {
                         if (scope.$isVisibleType('CLUSTER')) {
                             scope.stateHolder.popup.isOpen = !scope.stateHolder.popup.isOpen;
+
+                            if (scope.stateHolder.popup.isOpen) {
+                                scope.stateHolder.territoriesLabel = scope.getTerritoriesString();
+                            }
                         }
                     };
 
@@ -926,14 +964,12 @@
                     };
 
                     scope.toggleWorldwide = function (state) {
-                        var source = scope.dataHolder.source;
-
-                        tgUtilities.forEach(source.countries, function (territory) {
-                            scope.toggleTerritorySelection(territory.getCluster(), territory, false, state);
+                        tgUtilities.forEach(scope.dataHolder.source.countries, function (territory) {
+                            scope.toggleCountrySelection(territory.getCluster(), territory, false, state);
                         });
                     };
 
-                    scope.toggleTerritorySelection = function (cluster, territory, ignoreClusterUpdate, state) {
+                    scope.toggleCountrySelection = function (cluster, territory, ignoreClusterUpdate, state) {
                         scope.stateHolder.popup.dirty = true;
 
                         var clusterState = cluster.getState(),
@@ -951,32 +987,25 @@
 
                             if (!ignoreClusterUpdate) {
                                 updateCluster(cluster);
+
+                                scope.stateHolder.territoriesLabel = scope.getTerritoriesString();
                             }
                         }
                     };
 
                     scope.toggleClusterSelection = function (cluster, state) {
-                        var clusterTerritories = getClusterTerritories(cluster);
+                        var clusterTerritories = getClusterTerritories(cluster),
+                            countries;
 
-                        if (state === true) {
-                            tgUtilities.forEach(clusterTerritories.unselectedCountries, function (clusterTerritory) {
-                                scope.toggleTerritorySelection(cluster, clusterTerritory, true, state);
-                            });
-                        } else if (state === false) {
-                            tgUtilities.forEach(clusterTerritories.selectedCountries, function (clusterTerritory) {
-                                scope.toggleTerritorySelection(cluster, clusterTerritory, true, state);
-                            });
+                        if (state === true || !tgUtilities.empty(clusterTerritories.unselectedCountries)) {
+                            countries = clusterTerritories.unselectedCountries;
                         } else {
-                            if (!tgUtilities.empty(clusterTerritories.unselectedCountries)) {
-                                tgUtilities.forEach(clusterTerritories.unselectedCountries, function (clusterTerritory) {
-                                    scope.toggleTerritorySelection(cluster, clusterTerritory, true, state);
-                                });
-                            } else {
-                                tgUtilities.forEach(clusterTerritories.selectedCountries, function (clusterTerritory) {
-                                    scope.toggleTerritorySelection(cluster, clusterTerritory, true, state);
-                                });
-                            }
+                            countries = clusterTerritories.selectedCountries;
                         }
+
+                        tgUtilities.forEach(countries, function (country) {
+                            scope.toggleCountrySelection(cluster, country, true, state);
+                        });
 
                         updateCluster(cluster);
                     };
@@ -986,20 +1015,20 @@
 
                         if (state === true) {
                             tgUtilities.forEach(regionTerritories.unselectedCountries, function (regionTerritory) {
-                                scope.toggleTerritorySelection(cluster, regionTerritory, true, state);
+                                scope.toggleCountrySelection(cluster, regionTerritory, true, state);
                             });
                         } else if (state === false) {
                             tgUtilities.forEach(regionTerritories.selectedCountries, function (regionTerritory) {
-                                scope.toggleTerritorySelection(cluster, regionTerritory, true, state);
+                                scope.toggleCountrySelection(cluster, regionTerritory, true, state);
                             });
                         } else {
                             if (!tgUtilities.empty(regionTerritories.unselectedCountries)) {
                                 tgUtilities.forEach(regionTerritories.unselectedCountries, function (regionTerritory) {
-                                    scope.toggleTerritorySelection(cluster, regionTerritory, true, state);
+                                    scope.toggleCountrySelection(cluster, regionTerritory, true, state);
                                 });
                             } else {
                                 tgUtilities.forEach(regionTerritories.selectedCountries, function (regionTerritory) {
-                                    scope.toggleTerritorySelection(cluster, regionTerritory, true, state);
+                                    scope.toggleCountrySelection(cluster, regionTerritory, true, state);
                                 });
                             }
                         }
@@ -1034,7 +1063,7 @@
                                     scope.toggleRegionSelection(item.getCluster(), item, true);
                                     break;
                                 case 'country':
-                                    scope.toggleTerritorySelection(item.getCluster(), item, false, true);
+                                    scope.toggleCountrySelection(item.getCluster(), item, false, true);
                                     break;
                             }
 
@@ -1057,7 +1086,7 @@
                                     scope.toggleRegionSelection(item.getCluster(), item, false);
                                     break;
                                 case 'country':
-                                    scope.toggleTerritorySelection(item.getCluster(), item, false, false);
+                                    scope.toggleCountrySelection(item.getCluster(), item, false, false);
                                     break;
                             }
 
@@ -1110,6 +1139,8 @@
                         clusterState.selected = tgUtilities.empty(getClusterTerritories(cluster).unselectedCountries);
 
                         updateClusterRegions(cluster);
+
+                        scope.stateHolder.territoriesLabel = scope.getTerritoriesString();
                     }
 
                     function updateClusterRegions(cluster) {

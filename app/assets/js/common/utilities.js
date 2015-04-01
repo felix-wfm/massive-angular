@@ -70,25 +70,35 @@
         function select(obj, fnProp, unique) {
             var result = [];
 
-            each(obj, function (val, key) {
+            forEach(obj, function (val, key) {
                 var r = fnProp(val, key, obj);
 
                 if (r !== undefined) {
-                    if (isArray(r)) {
-                        r.forEach(function (rs) {
-                            if (!unique || result.indexOf(rs) === -1) {
-                                result.push(rs);
-                            }
-                        });
-                    } else {
-                        if (!unique || result.indexOf(r) === -1) {
-                            result.push(r);
-                        }
+                    if (!unique || result.indexOf(r) === -1) {
+                        result.push(r);
                     }
                 }
             });
 
             return result;
+        }
+
+        function expandArray(arr) {
+            if (arr && isArray(arr)) {
+                var r = [];
+
+                return arr.reduce(function (it1, it2) {
+                    if (it1 && isArray(it1)) {
+                        r = it1;
+                    }
+
+                    if (it2 && isArray(it2)) {
+                        r = r.concat(it2);
+                    }
+
+                    return r;
+                });
+            }
         }
 
         function empty(arr) {
@@ -136,6 +146,7 @@
             forEach: forEach,
             each: each,
             select: select,
+            expandArray: expandArray,
             empty: empty,
             has: has,
             naturalJoin: naturalJoin,
