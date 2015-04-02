@@ -1,6 +1,6 @@
 angular.module('app')
-    .controller('TerritoryController', ['$scope',
-        function ($scope) {
+    .controller('TerritoryController', ['$scope', 'tgTerritoryUtilities',
+        function ($scope, tgTerritoryUtilities) {
             'use strict';
 
             $scope.source = {
@@ -1512,7 +1512,9 @@ angular.module('app')
             };
 
             (function init() {
+                var data = tgTerritoryUtilities.prepareRawData($scope.source.data, ['WORLDWIDE','CLUSTER','REGION','COUNTRY']);
 
+                $scope.__territory.model1 = tgTerritoryUtilities.getTerritories([10005], data);
             })();
         }
     ]);

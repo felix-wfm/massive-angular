@@ -90,10 +90,14 @@
                 return arr.reduce(function (it1, it2) {
                     if (it1 && isArray(it1)) {
                         r = it1;
+                    } else {
+                        r.push(it1);
                     }
 
                     if (it2 && isArray(it2)) {
                         r = r.concat(it2);
+                    } else {
+                        r.push(it2);
                     }
 
                     return r;
@@ -102,15 +106,19 @@
         }
 
         function empty(arr) {
-            return (!isArray(arr) || arr.length === 0);
+            if (isArray(arr)) {
+                return (arr.length === 0);
+            }
         }
 
         function has(arr, val) {
-            return (!empty(arr) && arr.indexOf(val) > -1);
+            if (isArray(arr)) {
+                return (arr.indexOf(val) !== -1);
+            }
         }
 
         function naturalJoin(list, token, lastToken) {
-            if (!empty(list)) {
+            if (empty(list) === false) {
                 var joinedList = [];
 
                 list = list.slice();
@@ -130,12 +138,18 @@
         }
 
         function sort(arr, fn) {
-            if (!empty(arr) && isFunction(fn)) {
-                arr.sort(function (it1, it2) {
-                    var r = fn(it1, it2);
+            if (isArray(arr)) {
+                if (isFunction(fn)) {
+                    arr.sort(function (it1, it2) {
+                        var r = fn(it1, it2);
 
-                    return (r > 0) ? 1 : ((r < 0) ? -1 : 0);
-                });
+                        return (r > 0) ? 1 : ((r < 0) ? -1 : 0);
+                    });
+                } else {
+                    arr.sort();
+                }
+
+                return arr;
             }
         }
 

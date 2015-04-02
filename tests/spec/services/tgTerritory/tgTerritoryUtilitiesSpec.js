@@ -79,6 +79,13 @@ describe('Unit: tgTerritoryUtilities', function () {
                 expect(tgTerritoryUtilities.getTerritoriesLabel([840, 826], preparedSource)).toBe('United Kingdom, United States');
 
                 expect(tgTerritoryUtilities.getTerritoriesLabel([440, 428, 233, 840], preparedSource)).toBe('Baltic States, United States');
+
+                expect(tgTerritoryUtilities.getTerritoriesLabel([32, 68, 76, 152, 170, 218, 328, 600, 604], preparedSource)).toBe('South America excluding Suriname, Uruguay and Venezuela');
+                expect(tgTerritoryUtilities.getTerritoriesLabel([32, 68, 76, 152, 170, 218, 328, 600], preparedSource)).toBe('Argentina, Bolivia, Brazil, Chile, Colombia, Ecuador, Guyana, Paraguay');
+                expect(tgTerritoryUtilities.getTerritoriesLabel([28, 44, 52, 84, 124, 188, 192, 212, 214, 222, 308, 320, 332], preparedSource)).toBe('Antigua and Barbuda, Bahamas, Barbados, Belize, Canada, Costa Rica, Cuba, Dominica, Dominican Republic, El Salvador, Grenada, Guatemala, Haiti');
+
+                expect(tgTerritoryUtilities.getTerritoriesLabel([70, 203, 336, 276, 8, 470, 196, 616, 348, 620, 807, 20, 208, 440, 372, 100, 578, 442, 233, 380, 40, 438, 498, 499, 642, 492, 250, 352, 528, 191, 428, 112, 246, 56, 300], preparedSource)).toBe('Europe excluding Russian Federation, San Marino, Serbia, Slovakia, Slovenia, Spain, Sweden, Switzerland, Ukraine and United Kingdom');
+
                 expect(tgTerritoryUtilities.getTerritoriesLabel([440, 70, 100, 203, 233, 705, 8, 616, 348, 643, 498, 499, 642, 804, 703, 807, 428, 191, 112, 688, 840], preparedSource)).toBe('Eastern Europe and Balkans, United States');
 
                 expect(tgTerritoryUtilities.getTerritoriesLabel([10000, 10003, 10002, 10001, 340, 308, 558, 192, 44, 591, 84, 670, 222, 630, 188, 320, 52, 212, 484, 780, 214, 332, 662, 124, 28, 388, 659, 10004], preparedSource)).toBe('Worldwide excluding United States');

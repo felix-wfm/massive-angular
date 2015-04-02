@@ -35,7 +35,7 @@
                                 <button class="tg-territory__btn" ng-switch-when="false" ng-click="toggleWorldwide(true); $event.stopPropagation();">Select all</button>\
                                 <button class="tg-territory__btn" ng-switch-when="true" ng-click="toggleWorldwide(false); $event.stopPropagation();">Deselect all</button>\
                             </div>\
-                            <button class="tg-territory__btn pull-right">Close</button>\
+                            <button class="tg-territory__btn pull-right" ng-click="$closePopup();">Close</button>\
                         </div>\
                         <div class="tg-territory__popup-header">\
                             <span>{{stateHolder.territoriesLabel}}</span>\
@@ -711,7 +711,7 @@
                     //      - number of unused countries should be less or equal than 10
                     //      - number of unused countries should be less than 25% of total countries in cluster
                     // if cluster exclusion rule is applicable, then display `<cluster name> excluding [<unused country>]`
-                    if (numberOfAllCountries > 10 && numberOfUnusedCountries > 0 && numberOfUnusedCountries <= 10 && (numberOfUnusedCountries / numberOfAllCountries) < 0.25) {
+                    if (numberOfAllCountries > 10 && numberOfUnusedCountries > 0 && numberOfUnusedCountries <= 10 && (numberOfUnusedCountries / numberOfAllCountries) <= 0.25) {
                         // get all unused countries names for current cluster
                         var unusedClusterCountriesNames = tgUtilities.select(allClusterCountries, function (country) {
                             var usedCountry = tgUtilities.each(incompleteCluster.countries, function (usedCountry) {
@@ -913,6 +913,13 @@
                                 return true;
                             }
                         });
+                    };
+
+                    scope.$closePopup = function () {
+                        if (scope.stateHolder.popup.isOpen) {
+                            scope.stateHolder.popup.isOpen = false;
+                            updateSelection();
+                        }
                     };
 
                     scope.openPopup = function () {
@@ -1166,6 +1173,20 @@
                         Array.prototype.push.apply(scope.dataHolder.model, territories);
                     }
 
+                    function updateSelection() {
+                        tgUtilities.forEach(scope.dataHolder.source.all, function (item) {
+                            item.getState().selected = false;
+
+                            if (item.type === 'cluster') {
+                                item.getState().selectedCountries = 0;
+                            }
+                        });
+
+                        tgUtilities.forEach(scope.dataHolder.model, function (item) {
+                            item.getState().selected = false;
+                        });
+                    }
+
                     function getTypeaheadCtrl() {
                         var tgTypeaheadCtrl = element
                             .find('.tg-territory__input')
@@ -1174,7 +1195,20 @@
                         return tgTypeaheadCtrl;
                     }
 
-                    $setModelValue(parentScope, scope.dataHolder.model);
+                    function applyToModel(model) {
+                        scope.dataHolder.model.length = 0;
+
+                        tgUtilities.forEach(model, function (item) {
+                            scope.dataHolder.model.push(item);
+                        });
+                    }
+
+                    parentScope.$watch($getModelValue, function (model) {
+                        if (model !== scope.dataHolder.model) {
+                            applyToModel(model);
+                            $setModelValue(parentScope, scope.dataHolder.model);
+                        }
+                    });
                 }
 
                 function postLink(scope, element, attrs, controllers) {
