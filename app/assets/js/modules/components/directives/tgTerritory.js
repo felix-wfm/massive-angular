@@ -23,7 +23,8 @@
                                 <div class="tg-typeahead__suggestions-footer-inner" ng-show="$dataSets[0].queried.matches == 0">Territory with name <strong>{{$term}}</strong> doesn\'t exist.</div>\
                             </div>\
                         </div>\
-                        <button class="tg-territory__globe-button" ng-click="!$isDisabled() && openPopup();"></button>\
+                        \
+                        <button class="tg-territory__globe-button" ng-class="{\'tg-territory__loading-button\':stateHolder.loading}" ng-click="!$isDisabled() && openPopup();"></button>\
                     </div>\
                     <div class="tg-territory__popup" ng-if="stateHolder.popup.isOpen">\
                         <div class="tg-territory__popup-header">\
@@ -108,7 +109,7 @@
         }])
         .filter('tgTerritoryFilter', tgTerritoryFilter)
         .factory('tgTerritoryUtilities', tgTerritoryUtilities)
-        .factory('tgTerritoryService', tgTerritoryService)
+        .provider('tgTerritoryService', tgTerritoryServiceProvider)
         .directive('tgTerritory', tgTerritory);
 
     tgTerritoryFilter.$inject = ['tgUtilities'];
@@ -704,7 +705,7 @@
                 unusedClustersNames = tgUtilities.select(incompleteClusters, function (incompleteCluster) {
                     var allClusterCountries = incompleteCluster.cluster.getCountries(),
                         numberOfAllCountries = allClusterCountries.length;
-                        numberOfUnusedCountries = numberOfAllCountries - incompleteCluster.countries.length;
+                    numberOfUnusedCountries = numberOfAllCountries - incompleteCluster.countries.length;
 
                     // cluster exclusion rule:
                     //      - number of total countries in cluster should be more than 10
@@ -743,7 +744,7 @@
 
                     // collect remained territories names
                     remainedTerritoriesNames = tgUtilities.select(remainedTerritories, function (territory) {
-                       return territory.name;
+                        return territory.name;
                     });
                 }
 
@@ -771,37 +772,31 @@
     tgTerritoryService.$inject = ['$http', '$q'];
 
     function tgTerritoryService($http, $q) {
-        var cachedTerritories = {
-            all: undefined
-        };
+        var cachedTerritories;
 
-        function get() {
+        function get(cache) {
             var defer = $q.defer();
 
-            if (!cachedTerritories.all) {
-                $http.get('api/territories.json')
+            if (cache && cachedTerritories) {
+                defer.resolve(cachedTerritories);
+            } else {
+                var url = 'api/territories/territories.json';
+
+                $http.get(url)
                     .success(function (response) {
-                        cachedTerritories.all = response;
-                        defer.resolve(cachedTerritories.all);
+                        cachedTerritories = response;
+                        defer.resolve(cachedTerritories);
                     })
                     .error(function () {
                         defer.reject();
                     });
-            } else {
-                defer.resolve(cachedTerritories.all);
             }
 
             return defer.promise;
         }
 
-        function clear(type) {
-            if (type) {
-                if (cachedTerritories.hasOwnProperty(type)) {
-                    cachedTerritories[type] = undefined;
-                }
-            } else {
-                cachedTerritories.all = undefined;
-            }
+        function clear() {
+            cachedTerritories = undefined;
         }
 
         return {
@@ -810,9 +805,15 @@
         };
     }
 
-    tgTerritory.$inject = ['$tgComponents', '$parse', '$document', 'tgTerritoryUtilities', 'tgUtilities'];
+    tgTerritory.$inject = ['$tgComponents', '$parse', '$document', 'tgTerritoryService', 'tgTerritoryUtilities', 'tgUtilities'];
 
-    function tgTerritory($tgComponents, $parse, $document, tgTerritoryUtilities, tgUtilities) {
+    function tgTerritoryServiceProvider() {
+        return {
+            $get: tgTerritoryService
+        };
+    }
+
+    function tgTerritory($tgComponents, $parse, $document, tgTerritoryService, tgTerritoryUtilities, tgUtilities) {
         return {
             restrict: 'A',
             require: ['tgTerritory', '?ngModel'],
@@ -855,8 +856,13 @@
                         ngModelCtrl = controllers[1],
                         options = prepareOptions(scope.tgTerritory, attrs, scope);
 
+                    tgTerritoryService.get(true)
+                        .then(function (data) {
+                            initSource(data);
+                        });
+
                     scope.dataHolder = {
-                        source: tgTerritoryUtilities.prepareRawData(scope.tgTerritorySource, options.sourceTypes),
+                        source: undefined,
                         model: [],
                         options: {
                             tagManagerTemplateUrl: 'tg-territory-tag-manager.tpl.html',
@@ -867,6 +873,7 @@
                     };
 
                     scope.stateHolder = {
+                        loading: true,
                         popup: {
                             isOpen: false,
                             dirty: false
@@ -876,7 +883,6 @@
                     };
 
                     scope.getTerritoriesString = function () {
-                        console.log('getTerritoriesString');
                         var source = scope.dataHolder.source,
                             selectedCountriesIds = tgUtilities.select(source.countries, function (country) {
                                 if (country.getState().selected) {
@@ -888,7 +894,7 @@
                     };
 
                     scope.$isDisabled = function () {
-                        return !!scope.tgTerritoryDisabled || scope.stateHolder.disabled;
+                        return scope.stateHolder.loading || !!scope.tgTerritoryDisabled || scope.stateHolder.disabled;
                     };
 
                     scope.$isVisibleType = function (type) {
@@ -946,7 +952,7 @@
                     };
 
                     scope.onInsideClick = function () {
-                        if (options.tagsTransform) {
+                        if (options.tagsTransform && !scope.$isDisabled()) {
                             getTypeaheadCtrl().switchToTags();
                         }
                     };
@@ -1101,6 +1107,12 @@
                         }
                     };
 
+                    scope.initView = function () {
+                        if (options.tagsTransform) {
+                            getTypeaheadCtrl().switchToText();
+                        }
+                    };
+
                     function getClusterTerritories(cluster) {
                         var selectedCountries = [],
                             unselectedCountries = [];
@@ -1203,10 +1215,19 @@
                         });
                     }
 
+                    function initSource(data) {
+                        scope.dataHolder.source = tgTerritoryUtilities.prepareRawData(data, options.sourceTypes);
+                        scope.stateHolder.loading = false;
+
+                        applyToModel($getModelValue(parentScope));
+                    }
+
                     parentScope.$watch($getModelValue, function (model) {
                         if (model !== scope.dataHolder.model) {
-                            applyToModel(model);
-                            $setModelValue(parentScope, scope.dataHolder.model);
+                            if (scope.dataHolder.source) {
+                                applyToModel(model);
+                                $setModelValue(parentScope, scope.dataHolder.model);
+                            }
                         }
                     });
                 }
@@ -1227,6 +1248,8 @@
                     scope.$on('$destroy', function () {
                         $document.off('click', onDocumentClick);
                     });
+
+                    scope.initView();
                 }
 
                 return {
