@@ -9,14 +9,16 @@
                         <div class="tg-territory__input"\
                              tg-typeahead=""\
                              tg-typeahead-disabled="$isDisabled()"\
-                             tg-typeahead-tag-manager="dataHolder.options"\
-                             tg-typeahead-tag-selected="onTagSelected(tag, sender);"\
-                             tg-typeahead-tag-deselected="onTagDeselected(tag, sender);"\
-                             ng-model="dataHolder.model">\
-                            <div tg-typeahead-data-set="territory as territory.name for territory in dataHolder.source.all | tgTerritoryFilter:$viewValue">\
+                             tg-typeahead-tag-manager="$dataHolder.options"\
+                             tg-typeahead-tag-selected="$onTagSelected(tag, sender);"\
+                             tg-typeahead-tag-deselected="$onTagDeselected(tag, sender);"\
+                             ng-model="$dataHolder.model">\
+                            <div tg-typeahead-data-set="territory as territory.name for territory in $dataHolder.source.all | tgTerritoryFilter:$viewValue">\
                                 <div tg-typeahead-data-set-item="">\
-                                    <span>{{$match.data.name}}</span>\
-                                    <p ng-if="$match.data.type === \'worldwide\' || $match.data.type === \'cluster\' || $match.data.type === \'region\'">{{$match.data.getCountries().length}} countries</p>\
+                                    <div ng-init="$match.disabled = $match.data.getState().selected;">\
+                                        <span tg-highlight-html="{{ $term }}">{{$match.data.name}}</span>\
+                                        <div class="tg-territory__countries-counter" ng-if="$external.$isTerritoriesGroup($match.data)">{{$match.data.getCountries().length}} countries</div>\
+                                    </div>\
                                 </div> \
                             </div>\
                             <div tg-typeahead-popup-footer="">\
@@ -24,55 +26,55 @@
                             </div>\
                         </div>\
                         \
-                        <button class="tg-territory__globe-button" ng-class="{\'tg-territory__loading-button\':stateHolder.loading}" ng-click="!$isDisabled() && openPopup();"></button>\
+                        <button class="tg-territory__globe-button" ng-if="$isVisibleGlobeButton()" ng-class="{\'tg-territory__loading-button\':$stateHolder.loading}" ng-click="!$isDisabled() && $openPopup();"></button>\
                     </div>\
-                    <div class="tg-territory__popup" ng-if="stateHolder.popup.isOpen">\
+                    <div class="tg-territory__popup" ng-if="$stateHolder.popup.isOpen">\
                         <div class="tg-territory__popup-header">\
                             <div class="pull-left" ng-switch="$isAllExpanded()">\
-                                <button class="tg-territory__btn" ng-switch-when="false" ng-click="toggleAllClustersExpand(true); $event.stopPropagation();">Expand all</button>\
-                                <button class="tg-territory__btn" ng-switch-when="true" ng-click="toggleAllClustersExpand(false); $event.stopPropagation();">Collapse all</button>\
+                                <button class="tg-territory__btn" ng-switch-when="false" ng-click="$event.stopPropagation(); $toggleAllClustersExpand(true);">Expand all</button>\
+                                <button class="tg-territory__btn" ng-switch-when="true" ng-click="$event.stopPropagation(); $toggleAllClustersExpand(false);">Collapse all</button>\
                             </div>\
                             <div class="pull-left" ng-switch="$isAllSelected()">\
-                                <button class="tg-territory__btn" ng-switch-when="false" ng-click="toggleWorldwide(true); $event.stopPropagation();">Select all</button>\
-                                <button class="tg-territory__btn" ng-switch-when="true" ng-click="toggleWorldwide(false); $event.stopPropagation();">Deselect all</button>\
+                                <button class="tg-territory__btn" ng-switch-when="false" ng-click="$event.stopPropagation(); $toggleWorldwide(true);">Select all</button>\
+                                <button class="tg-territory__btn" ng-switch-when="true" ng-click="$event.stopPropagation(); $toggleWorldwide(false);">Deselect all</button>\
                             </div>\
                             <button class="tg-territory__btn pull-right" ng-click="$closePopup();">Close</button>\
                         </div>\
                         <div class="tg-territory__popup-header">\
-                            <span>{{stateHolder.territoriesLabel}}</span>\
+                            <span>{{$stateHolder.territoriesLabel}}</span>\
                         </div>\
                         <div class="tg-territory__popup-body">\
                             <div class="tg-territory__clusters">\
-                                <div class="tg-territory__cluster" ng-repeat="cluster in dataHolder.source.clusters track by cluster.id">\
+                                <div class="tg-territory__cluster" ng-repeat="cluster in ::$dataHolder.source.clusters track by cluster.id">\
                                     <div class="tg-territory__cluster-inner">\
-                                        <div class="tg-territory__cluster-header" ng-click="toggleClusterExpand(cluster);">\
+                                        <div class="tg-territory__cluster-header" ng-click="$toggleClusterExpand(cluster);">\
                                             <span class="pull-left">\
-                                                <i class="tg-territory__caret fa" ng-class="expandClass(cluster)"></i>\
-                                                {{cluster.name}}\
+                                                <i class="tg-territory__caret fa" ng-class="$expandClusterClass(cluster)"></i>\
+                                                {{::cluster.name}}\
                                             </span>\
                                             <span class="pull-right">\
                                                 {{cluster.getState().selectedCountries}}/{{cluster.getCountries().length}}\
-                                                <i class="fa" ng-class="clusterSelectionClass(cluster)" ng-click="$event.stopPropagation(); toggleClusterSelection(cluster);"></i>\
+                                                <i class="fa" ng-class="$clusterSelectionClass(cluster)" ng-click="$event.stopPropagation(); $toggleClusterSelection(cluster);"></i>\
                                             </span>\
                                         </div>\
                                         <div class="tg-territory__cluster-body"\
                                              ng-if="cluster.getState().expanded">\
                                             <ul class="tg-territory__cluster-countries">\
                                                 <li class="tg-territory__cluster-country" \
-                                                    ng-repeat="country in cluster.getCountries() track by country.id" \
-                                                    ng-click="toggleCountrySelection(cluster, country);" \
+                                                    ng-repeat="country in ::cluster.getCountries() track by country.id" \
+                                                    ng-click="$toggleCountrySelection(cluster, country);" \
                                                     ng-class="{\'m-active\':country.getState().selected}">\
-                                                    {{country.name}}\
+                                                    {{::country.name}}\
                                                 </li>\
                                             </ul>\
                                             <div ng-if="$isVisibleType(\'REGION\') && cluster.getRegions().length">\
                                                 <div class="tg-territory__cluster-region-title">Regions</div>\
                                                 <ul class="tg-territory__cluster-regions">\
                                                     <li class="tg-territory__cluster-region" \
-                                                        ng-repeat="region in cluster.getRegions() track by region.id" \
-                                                        ng-click="toggleRegionSelection(cluster, region);" \
+                                                        ng-repeat="region in ::cluster.getRegions() track by region.id" \
+                                                        ng-click="$toggleRegionSelection(cluster, region);" \
                                                         ng-class="{\'m-active\':region.getState().selected}">\
-                                                        <span>{{region.name}}</span>\
+                                                        <span>{{::region.name}}</span>\
                                                     </li>\
                                                 </ul>\
                                             </div>\
@@ -86,14 +88,14 @@
 
             $templateCache.put('tg-territory-tag-manager.tpl.html',
                 '<div class="tg-typeahead__tag-manager"\
-                      ng-class="::$templates.tagManager.wrapper.class"\
-                      ng-style="::$templates.tagManager.wrapper.style">\
-                   <div ng-if="!$stateHolder.tagTransformed"\
+                      ng-class="$templates.tagManager.wrapper.class"\
+                      ng-style="$templates.tagManager.wrapper.style">\
+                   <div ng-if="!$stateHolder.tagsTransformed"\
                         ng-repeat="$tag in $tags track by $tag.match.model.id | orderBy:$tagsOrder">\
                        <div tg-typeahead-render-template="$templates.tagManager.tag"></div>\
                    </div>\
                    <div class="tg-typeahead__tags-text"\
-                        ng-if="$stateHolder.tagTransformed">{{ $getTagsText() }}</div>\
+                        ng-if="$stateHolder.tagsTransformed">{{ $getTagsText() }}</div>\
                 </div>');
 
             $templateCache.put('tg-territory-tag.tpl.html',
@@ -112,9 +114,11 @@
         .provider('tgTerritoryService', tgTerritoryServiceProvider)
         .directive('tgTerritory', tgTerritory);
 
-    tgTerritoryFilter.$inject = ['tgUtilities'];
+    tgTerritoryFilter.$inject = ['$injector'];
 
-    function tgTerritoryFilter(tgUtilities) {
+    function tgTerritoryFilter($injector) {
+        var tgUtilities = $injector.get('tgUtilities');
+
         return function (arr, val) {
             if (!val) {
                 return arr;
@@ -124,18 +128,20 @@
 
             return tgUtilities.select(arr, function (item) {
                 if (item.name && item.name.toLowerCase().indexOf(val) !== -1) {
-                    if (!item.getState().selected) {
-                        return item;
-                    }
+                    //if (!item.getState().selected) {
+                    return item;
+                    //}
                 }
             });
         };
     }
 
-    tgTerritoryUtilities.$inject = ['$log', 'tgUtilities'];
+    tgTerritoryUtilities.$inject = ['$injector', '$log'];
 
-    function tgTerritoryUtilities($log, tgUtilities) {
+    function tgTerritoryUtilities($injector, $log) {
         var CLUSTERS_ORDER = [10005, 10000, 10004, 10002, 10003, 10001];
+
+        var tgUtilities = $injector.get('tgUtilities');
 
         function WorldwideTerritoryModel(id, name, raw) {
             var countries = [],
@@ -805,15 +811,15 @@
         };
     }
 
-    tgTerritory.$inject = ['$tgComponents', '$parse', '$document', 'tgTerritoryService', 'tgTerritoryUtilities', 'tgUtilities'];
-
     function tgTerritoryServiceProvider() {
         return {
             $get: tgTerritoryService
         };
     }
 
-    function tgTerritory($tgComponents, $parse, $document, tgTerritoryService, tgTerritoryUtilities, tgUtilities) {
+    tgTerritory.$inject = ['$injector', '$parse', '$document'];
+
+    function tgTerritory($injector, $parse, $document) {
         return {
             restrict: 'A',
             require: ['tgTerritory', '?ngModel'],
@@ -825,7 +831,10 @@
             },
             templateUrl: 'tg-territory.tpl.html',
             compile: function (tElement, tAttrs) {
-                var $getModelValue = $parse(tAttrs.ngModel),
+                var tgTerritoryService = $injector.get('tgTerritoryService'),
+                    tgTerritoryUtilities = $injector.get('tgTerritoryUtilities'),
+                    tgUtilities = $injector.get('tgUtilities'),
+                    $getModelValue = $parse(tAttrs.ngModel),
                     $setModelValue = $getModelValue.assign;
 
                 function prepareOptions(obj, attrs, scope) {
@@ -841,68 +850,115 @@
                         options.sourceTypes = ['COUNTRY'];
                     }
 
+                    if (attrs.tgTerritoryPicker) {
+                        options.picker = (attrs.tgTerritoryPicker !== 'false');
+                    } else {
+                        options.picker = !obj || obj.picker !== false;
+                    }
+
                     if (attrs.tgTerritoryTagsTransform) {
                         options.tagsTransform = (attrs.tgTerritoryTagsTransform === 'true');
                     } else {
-                        options.tagsTransform = obj && obj.tagsTransform || false;
+                        options.tagsTransform = obj && !!obj.tagsTransform || false;
                     }
+
+                    options.maxLines = obj && obj.maxLines || 3;
+
+                    options.tagManagerTemplateUrl = 'tg-territory-tag-manager.tpl.html';
+                    options.tagTemplateUrl = 'tg-territory-tag.tpl.html';
 
                     return options;
                 }
 
+                function getTerritoriesString(source) {
+                    var selectedCountriesIds = tgUtilities.select(source.countries, function (country) {
+                        if (country.getState().selected) {
+                            return country.id;
+                        }
+                    });
+
+                    return tgTerritoryUtilities.getTerritoriesLabel(selectedCountriesIds, source);
+                }
+
+                function getClusterTerritories(cluster) {
+                    var selectedCountries = [],
+                        unselectedCountries = [];
+
+                    tgUtilities.forEach(cluster.getCountries(), function (territory) {
+                        var territoryState = territory.getState();
+
+                        if (territoryState.selected) {
+                            selectedCountries.push(territory);
+                        } else {
+                            unselectedCountries.push(territory);
+                        }
+                    });
+
+                    return {
+                        selectedCountries: selectedCountries,
+                        unselectedCountries: unselectedCountries
+                    };
+                }
+
+                function getRegionTerritories(region) {
+                    var selectedCountries = [],
+                        unselectedCountries = [];
+
+                    tgUtilities.forEach(region.getCountries(), function (territory) {
+                        var territoryState = territory.getState();
+
+                        if (territoryState.selected) {
+                            selectedCountries.push(territory);
+                        } else {
+                            unselectedCountries.push(territory);
+                        }
+                    });
+
+                    return {
+                        selectedCountries: selectedCountries,
+                        unselectedCountries: unselectedCountries
+                    };
+                }
+
                 function preLink(scope, element, attrs, controllers) {
                     var parentScope = scope.$parent,
-                        selfCtrl = controllers[0],
-                        ngModelCtrl = controllers[1],
                         options = prepareOptions(scope.tgTerritory, attrs, scope);
 
                     tgTerritoryService.get(true)
-                        .then(function (data) {
-                            initSource(data);
+                        .then(function (response) {
+                            initSource(response.data);
                         });
 
-                    scope.dataHolder = {
+                    scope.$dataHolder = {
+                        options: options,
                         source: undefined,
-                        model: [],
-                        options: {
-                            tagManagerTemplateUrl: 'tg-territory-tag-manager.tpl.html',
-                            tagTemplateUrl: 'tg-territory-tag.tpl.html',
-                            maxLines: 4,
-                            tagTransform: true
-                        }
+                        model: []
                     };
 
-                    scope.stateHolder = {
+                    scope.$stateHolder = {
                         loading: true,
+                        disabled: false,
                         popup: {
                             isOpen: false,
                             dirty: false
                         },
-                        disabled: false,
                         territoriesLabel: undefined
                     };
 
-                    scope.getTerritoriesString = function () {
-                        var source = scope.dataHolder.source,
-                            selectedCountriesIds = tgUtilities.select(source.countries, function (country) {
-                                if (country.getState().selected) {
-                                    return country.id;
-                                }
-                            });
-
-                        return tgTerritoryUtilities.getTerritoriesLabel(selectedCountriesIds, scope.dataHolder.source);
-                    };
-
                     scope.$isDisabled = function () {
-                        return scope.stateHolder.loading || !!scope.tgTerritoryDisabled || scope.stateHolder.disabled;
+                        return scope.$stateHolder.loading || !!scope.tgTerritoryDisabled || scope.$stateHolder.disabled;
                     };
 
                     scope.$isVisibleType = function (type) {
                         return tgUtilities.has(options.sourceTypes, type);
                     };
 
+                    scope.$isVisibleGlobeButton = function () {
+                        return options.picker;
+                    };
+
                     scope.$isAllExpanded = function () {
-                        var source = scope.dataHolder.source;
+                        var source = scope.$dataHolder.source;
 
                         return !tgUtilities.each(source.clusters, function (cluster) {
                             if (!cluster.getState().expanded) {
@@ -912,7 +968,7 @@
                     };
 
                     scope.$isAllSelected = function () {
-                        var source = scope.dataHolder.source;
+                        var source = scope.$dataHolder.source;
 
                         return !tgUtilities.each(source.countries, function (territory) {
                             if (!territory.getState().selected) {
@@ -921,44 +977,31 @@
                         });
                     };
 
+                    scope.$isTerritoriesGroup = function (territory) {
+                        return (territory.type === 'worldwide' ||
+                                territory.type === 'cluster' ||
+                                territory.type === 'region');
+                    };
+
                     scope.$closePopup = function () {
-                        if (scope.stateHolder.popup.isOpen) {
-                            scope.stateHolder.popup.isOpen = false;
+                        if (scope.$stateHolder.popup.isOpen) {
+                            scope.$stateHolder.popup.isOpen = false;
                             updateSelection();
                         }
                     };
 
-                    scope.openPopup = function () {
+                    scope.$openPopup = function () {
                         if (scope.$isVisibleType('CLUSTER')) {
-                            scope.stateHolder.popup.isOpen = !scope.stateHolder.popup.isOpen;
+                            scope.$stateHolder.popup.isOpen = !scope.$stateHolder.popup.isOpen;
 
-                            if (scope.stateHolder.popup.isOpen) {
-                                scope.stateHolder.territoriesLabel = scope.getTerritoriesString();
+                            if (scope.$stateHolder.popup.isOpen) {
+                                updateTerritoriesLabel();
                             }
                         }
                     };
 
-                    scope.onOutsideClick = function () {
-                        if (options.tagsTransform) {
-                            getTypeaheadCtrl().switchToText();
-                        }
-
-                        if (scope.stateHolder.popup.isOpen && scope.stateHolder.popup.dirty) {
-                            scope.stateHolder.popup.dirty = false;
-                            updateModel();
-                        }
-
-                        scope.stateHolder.popup.isOpen = false;
-                    };
-
-                    scope.onInsideClick = function () {
-                        if (options.tagsTransform && !scope.$isDisabled()) {
-                            getTypeaheadCtrl().switchToTags();
-                        }
-                    };
-
-                    scope.toggleAllClustersExpand = function (state) {
-                        var clusters = scope.dataHolder.source.clusters;
+                    scope.$toggleAllClustersExpand = function (state) {
+                        var clusters = scope.$dataHolder.source.clusters;
 
                         tgUtilities.forEach(clusters, function (cluster) {
                             var clusterState = cluster.getState();
@@ -966,24 +1009,24 @@
                         });
                     };
 
-                    scope.toggleClusterExpand = function (cluster) {
+                    scope.$toggleClusterExpand = function (cluster) {
                         var clusterState = cluster.getState();
                         clusterState.expanded = !clusterState.expanded;
                     };
 
-                    scope.expandClass = function (cluster) {
+                    scope.$expandClusterClass = function (cluster) {
                         var clusterState = cluster.getState();
                         return (clusterState.expanded) ? 'fa-caret-down' : 'fa-caret-right';
                     };
 
-                    scope.toggleWorldwide = function (state) {
-                        tgUtilities.forEach(scope.dataHolder.source.countries, function (territory) {
-                            scope.toggleCountrySelection(territory.getCluster(), territory, false, state);
+                    scope.$toggleWorldwide = function (state) {
+                        tgUtilities.forEach(scope.$dataHolder.source.countries, function (territory) {
+                            scope.$toggleCountrySelection(territory.getCluster(), territory, false, state);
                         });
                     };
 
-                    scope.toggleCountrySelection = function (cluster, territory, ignoreClusterUpdate, state) {
-                        scope.stateHolder.popup.dirty = true;
+                    scope.$toggleCountrySelection = function (cluster, territory, ignoreClusterUpdate, state) {
+                        scope.$stateHolder.popup.dirty = true;
 
                         var clusterState = cluster.getState(),
                             territoryState = territory.getState(),
@@ -1000,13 +1043,12 @@
 
                             if (!ignoreClusterUpdate) {
                                 updateCluster(cluster);
-
-                                scope.stateHolder.territoriesLabel = scope.getTerritoriesString();
+                                updateTerritoriesLabel();
                             }
                         }
                     };
 
-                    scope.toggleClusterSelection = function (cluster, state) {
+                    scope.$toggleClusterSelection = function (cluster, state) {
                         var clusterTerritories = getClusterTerritories(cluster),
                             countries;
 
@@ -1017,31 +1059,31 @@
                         }
 
                         tgUtilities.forEach(countries, function (country) {
-                            scope.toggleCountrySelection(cluster, country, true, state);
+                            scope.$toggleCountrySelection(cluster, country, true, state);
                         });
 
                         updateCluster(cluster);
                     };
 
-                    scope.toggleRegionSelection = function (cluster, region, state) {
+                    scope.$toggleRegionSelection = function (cluster, region, state) {
                         var regionTerritories = getRegionTerritories(region);
 
                         if (state === true) {
                             tgUtilities.forEach(regionTerritories.unselectedCountries, function (regionTerritory) {
-                                scope.toggleCountrySelection(cluster, regionTerritory, true, state);
+                                scope.$toggleCountrySelection(cluster, regionTerritory, true, state);
                             });
                         } else if (state === false) {
                             tgUtilities.forEach(regionTerritories.selectedCountries, function (regionTerritory) {
-                                scope.toggleCountrySelection(cluster, regionTerritory, true, state);
+                                scope.$toggleCountrySelection(cluster, regionTerritory, true, state);
                             });
                         } else {
                             if (!tgUtilities.empty(regionTerritories.unselectedCountries)) {
                                 tgUtilities.forEach(regionTerritories.unselectedCountries, function (regionTerritory) {
-                                    scope.toggleCountrySelection(cluster, regionTerritory, true, state);
+                                    scope.$toggleCountrySelection(cluster, regionTerritory, true, state);
                                 });
                             } else {
                                 tgUtilities.forEach(regionTerritories.selectedCountries, function (regionTerritory) {
-                                    scope.toggleCountrySelection(cluster, regionTerritory, true, state);
+                                    scope.$toggleCountrySelection(cluster, regionTerritory, true, state);
                                 });
                             }
                         }
@@ -1049,7 +1091,7 @@
                         updateCluster(cluster);
                     };
 
-                    scope.clusterSelectionClass = function (cluster) {
+                    scope.$clusterSelectionClass = function (cluster) {
                         var clusterState = cluster.getState();
 
                         if (clusterState.selectedCountries === cluster.getCountries().length) {
@@ -1061,22 +1103,22 @@
                         return 'fa-square-o';
                     };
 
-                    scope.onTagSelected = function (tag, sender) {
+                    scope.$onTagSelected = function (tag, sender) {
                         if (sender !== 'ModelUpdate') {
                             var item = tag.match.data;
 
                             switch (item.type) {
                                 case 'worldwide':
-                                    scope.toggleWorldwide(true);
+                                    scope.$toggleWorldwide(true);
                                     break;
                                 case 'cluster':
-                                    scope.toggleClusterSelection(item, true);
+                                    scope.$toggleClusterSelection(item, true);
                                     break;
                                 case 'region':
-                                    scope.toggleRegionSelection(item.getCluster(), item, true);
+                                    scope.$toggleRegionSelection(item.getCluster(), item, true);
                                     break;
                                 case 'country':
-                                    scope.toggleCountrySelection(item.getCluster(), item, false, true);
+                                    scope.$toggleCountrySelection(item.getCluster(), item, false, true);
                                     break;
                             }
 
@@ -1084,26 +1126,48 @@
                         }
                     };
 
-                    scope.onTagDeselected = function (tag, sender) {
+                    scope.$onTagDeselected = function (tag, sender) {
                         if (sender !== 'ModelUpdate') {
                             var item = tag.match.data;
 
                             switch (item.type) {
                                 case 'worldwide':
-                                    scope.toggleWorldwide(false);
+                                    scope.$toggleWorldwide(false);
                                     break;
                                 case 'cluster':
-                                    scope.toggleClusterSelection(item, false);
+                                    scope.$toggleClusterSelection(item, false);
                                     break;
                                 case 'region':
-                                    scope.toggleRegionSelection(item.getCluster(), item, false);
+                                    scope.$toggleRegionSelection(item.getCluster(), item, false);
                                     break;
                                 case 'country':
-                                    scope.toggleCountrySelection(item.getCluster(), item, false, false);
+                                    scope.$toggleCountrySelection(item.getCluster(), item, false, false);
                                     break;
                             }
 
                             updateModel();
+                        }
+                    };
+
+                    scope.$onOutsideClick = function () {
+                        if (options.tagsTransform) {
+                            getTypeaheadCtrl().switchToText();
+                        }
+
+                        if (scope.$stateHolder.popup.isOpen && scope.$stateHolder.popup.dirty) {
+                            scope.$stateHolder.popup.dirty = false;
+                            updateModel();
+                        }
+
+                        scope.$stateHolder.popup.isOpen = false;
+
+                        scope.$digest();
+                    };
+
+                    scope.$onInsideClick = function () {
+                        if (options.tagsTransform && !scope.$isDisabled()) {
+                            getTypeaheadCtrl().switchToTags();
+                            scope.$digest();
                         }
                     };
 
@@ -1113,44 +1177,8 @@
                         }
                     };
 
-                    function getClusterTerritories(cluster) {
-                        var selectedCountries = [],
-                            unselectedCountries = [];
-
-                        tgUtilities.forEach(cluster.getCountries(), function (territory) {
-                            var territoryState = territory.getState();
-
-                            if (territoryState.selected) {
-                                selectedCountries.push(territory);
-                            } else {
-                                unselectedCountries.push(territory);
-                            }
-                        });
-
-                        return {
-                            selectedCountries: selectedCountries,
-                            unselectedCountries: unselectedCountries
-                        };
-                    }
-
-                    function getRegionTerritories(region) {
-                        var selectedCountries = [],
-                            unselectedCountries = [];
-
-                        tgUtilities.forEach(region.getCountries(), function (territory) {
-                            var territoryState = territory.getState();
-
-                            if (territoryState.selected) {
-                                selectedCountries.push(territory);
-                            } else {
-                                unselectedCountries.push(territory);
-                            }
-                        });
-
-                        return {
-                            selectedCountries: selectedCountries,
-                            unselectedCountries: unselectedCountries
-                        };
+                    function updateTerritoriesLabel() {
+                        scope.$stateHolder.territoriesLabel = getTerritoriesString(scope.$dataHolder.source);
                     }
 
                     function updateCluster(cluster) {
@@ -1158,8 +1186,7 @@
                         clusterState.selected = tgUtilities.empty(getClusterTerritories(cluster).unselectedCountries);
 
                         updateClusterRegions(cluster);
-
-                        scope.stateHolder.territoriesLabel = scope.getTerritoriesString();
+                        updateTerritoriesLabel();
                     }
 
                     function updateClusterRegions(cluster) {
@@ -1170,23 +1197,23 @@
                     }
 
                     function updateModel() {
-                        scope.dataHolder.model.length = 0;
+                        scope.$dataHolder.model.length = 0;
 
                         var territories,
-                            territoriesIds = tgUtilities.select(scope.dataHolder.source.countries, function (country) {
+                            territoriesIds = tgUtilities.select(scope.$dataHolder.source.countries, function (country) {
                                 if (country.getState().selected) {
                                     return country.id;
                                 }
                             });
 
-                        territoriesIds = tgTerritoryUtilities.validateTerritories(territoriesIds, scope.dataHolder.source);
-                        territories = tgTerritoryUtilities.getTerritories(territoriesIds, scope.dataHolder.source, true);
+                        territoriesIds = tgTerritoryUtilities.validateTerritories(territoriesIds, scope.$dataHolder.source);
+                        territories = tgTerritoryUtilities.getTerritories(territoriesIds, scope.$dataHolder.source, true);
 
-                        Array.prototype.push.apply(scope.dataHolder.model, territories);
+                        Array.prototype.push.apply(scope.$dataHolder.model, territories);
                     }
 
                     function updateSelection() {
-                        tgUtilities.forEach(scope.dataHolder.source.all, function (item) {
+                        tgUtilities.forEach(scope.$dataHolder.source.all, function (item) {
                             item.getState().selected = false;
 
                             if (item.type === 'cluster') {
@@ -1194,7 +1221,7 @@
                             }
                         });
 
-                        tgUtilities.forEach(scope.dataHolder.model, function (item) {
+                        tgUtilities.forEach(scope.$dataHolder.model, function (item) {
                             item.getState().selected = false;
                         });
                     }
@@ -1208,25 +1235,25 @@
                     }
 
                     function applyToModel(model) {
-                        scope.dataHolder.model.length = 0;
+                        scope.$dataHolder.model.length = 0;
 
                         tgUtilities.forEach(model, function (item) {
-                            scope.dataHolder.model.push(item);
+                            scope.$dataHolder.model.push(item);
                         });
                     }
 
                     function initSource(data) {
-                        scope.dataHolder.source = tgTerritoryUtilities.prepareRawData(data, options.sourceTypes);
-                        scope.stateHolder.loading = false;
+                        scope.$dataHolder.source = tgTerritoryUtilities.prepareRawData(data, options.sourceTypes);
+                        scope.$stateHolder.loading = false;
 
                         applyToModel($getModelValue(parentScope));
                     }
 
                     parentScope.$watch($getModelValue, function (model) {
-                        if (model !== scope.dataHolder.model) {
-                            if (scope.dataHolder.source) {
+                        if (model !== scope.$dataHolder.model) {
+                            if (scope.$dataHolder.source) {
                                 applyToModel(model);
-                                $setModelValue(parentScope, scope.dataHolder.model);
+                                $setModelValue(parentScope, scope.$dataHolder.model);
                             }
                         }
                     });
@@ -1235,11 +1262,9 @@
                 function postLink(scope, element, attrs, controllers) {
                     var onDocumentClick = function (evt) {
                         if (element.has(evt.target).length === 0) {
-                            scope.onOutsideClick();
-                            scope.$digest();
+                            scope.$onOutsideClick();
                         } else {
-                            scope.onInsideClick();
-                            scope.$digest();
+                            scope.$onInsideClick();
                         }
                     };
 
@@ -1258,7 +1283,8 @@
                 };
             },
             controller: ['$scope', '$element', '$attrs', function ($scope, $element, $attrs) {
-                var self = this;
+                var self = this,
+                    $tgComponents = $injector.get('$tgComponents');
 
                 self.$type = 'tgTerritory';
                 self.$name = !$scope.tgTerritoryId ? (self.$type + '_' + $scope.$id) : $scope.tgTerritoryId;

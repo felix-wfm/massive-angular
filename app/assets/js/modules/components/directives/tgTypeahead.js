@@ -43,7 +43,7 @@
 
             $templateCache.put('tg-typeahead-container.tpl.html',
                 '<div class="tg-typeahead__input-container"\
-                      ng-show="$isVisibleInput() && !$stateHolder.tagTransformed">\
+                      ng-show="$isVisibleInput() && !$stateHolder.tagsTransformed">\
                     <a href="" class="tg-typeahead__clear-link"\
                        ng-show="!$stateHolder.loader && $isVisibleClear()"\
                        ng-click="$clear($event);">Remove All</a>\
@@ -119,12 +119,12 @@
                 '<div class="tg-typeahead__tag-manager"\
                       ng-class="$templates.tagManager.wrapper.class"\
                       ng-style="$templates.tagManager.wrapper.style">\
-                   <div ng-if="!$stateHolder.tagTransformed"\
+                   <div ng-if="!$stateHolder.tagsTransformed"\
                         ng-repeat="$tag in $tags | orderBy:$tagsOrder">\
                        <div tg-typeahead-render-template="$templates.tagManager.tag"></div>\
                    </div>\
                    <div class="tg-typeahead__tags-text"\
-                        ng-if="$stateHolder.tagTransformed">{{ $getTagsText() }}</div>\
+                        ng-if="$stateHolder.tagsTransformed">{{ $getTagsText() }}</div>\
                 </div>');
 
             $templateCache.put('tg-typeahead-tag.tpl.html',
@@ -825,8 +825,12 @@
                                             scope.$digest();
                                         } else if (evt.which === 13 || evt.which === 32) { // Enter or Space Key
                                             if (activeDataSet && dataSetSource.activeIndex !== -1) {
-                                                scope.$selectMatch(activeDataSet, dataSetSource.activeIndex, dataSetSource.matches[dataSetSource.activeIndex], evt);
-                                                scope.$apply();
+                                                var match = dataSetSource.matches[dataSetSource.activeIndex];
+
+                                                if (!match.disabled) {
+                                                    scope.$selectMatch(activeDataSet, dataSetSource.activeIndex, dataSetSource.matches[dataSetSource.activeIndex], evt);
+                                                    scope.$apply();
+                                                }
                                             }
                                         } else if (evt.which === 27) { // Esc Key
                                             scope.$clearTypeahead();
@@ -1430,7 +1434,7 @@
                             }
 
                             if (attrs.tgTypeaheadMaxLines) {
-                                options.maxLines = Math.abs(parseInt(attrs.tgTypeaheadMaxLines))
+                                options.maxLines = Math.abs(parseInt(attrs.tgTypeaheadMaxLines));
                             } else {
                                 options.maxLines = obj && obj.maxLines || 0;
                             }
@@ -1447,10 +1451,10 @@
                                 options.displayClean = obj && obj.displayClean || false;
                             }
 
-                            if (attrs.tgTypeaheadTagTransform) {
-                                options.tagTransform = (attrs.tgTypeaheadTagTransform === 'true');
+                            if (attrs.tgTypeaheadTagsTransform) {
+                                options.tagsTransform = (attrs.tgTypeaheadTagsTransform === 'true');
                             } else {
-                                options.tagTransform = obj && obj.tagTransform || false;
+                                options.tagsTransform = obj && obj.tagsTransform || false;
                             }
 
                             if (attrs.tgTypeaheadTagManagerTemplateUrl) {
@@ -1496,10 +1500,12 @@
                                 tag: new RenderTemplateModel('tagManager.tag', options.tagTemplateUrl)
                             };
 
+                            scope.$templates.tagManager.wrapper.style = {};
+
                             scope.$templates.main.header = scope.$templates.tagManager.wrapper;
 
                             scope.$stateHolder = angular.extend(scope.$stateHolder || {}, {
-                                tagTransformed: false
+                                tagsTransformed: false
                             });
 
                             scope.$eventHolder = angular.extend(scope.$eventHolder || {}, {
@@ -1983,13 +1989,12 @@
                                 if (options.maxLines > 0) {
                                     if (scope.$tags.length > 1) {
                                         scope.$templates.tagManager.wrapper.class = 'clearfix';
-                                        scope.$templates.tagManager.wrapper.style = {
-                                            'max-height': (22 * options.maxLines) + 'px',
-                                            'overflow-y': 'auto'
-                                        };
+                                        scope.$templates.tagManager.wrapper.style['max-height'] = (22 * options.maxLines) + 'px';
+                                        scope.$templates.tagManager.wrapper.style['overflow-y'] = 'auto';
                                     } else {
                                         scope.$templates.tagManager.wrapper.class = undefined;
-                                        scope.$templates.tagManager.wrapper.style = {};
+                                        scope.$templates.tagManager.wrapper.style['max-height'] = undefined;
+                                        scope.$templates.tagManager.wrapper.style['overflow-y'] = undefined;
                                     }
                                 }
                             });
@@ -2022,11 +2027,11 @@
                             };
 
                             tgTypeaheadCtrl.switchToText = function () {
-                                scope.$stateHolder.tagTransformed = true;
+                                scope.$stateHolder.tagsTransformed = true;
                             };
 
                             tgTypeaheadCtrl.switchToTags = function () {
-                                scope.$stateHolder.tagTransformed = false;
+                                scope.$stateHolder.tagsTransformed = false;
 
                                 $timeout(updateTagManagerScrollPosition);
                             };
@@ -2054,8 +2059,9 @@
                             }
 
                             function adjustInputElWidth() {
-                                var inputContainerEl = scope.$findElementInTemplate(scope.$templates.main.wrapper, '.tg-typeahead__input-container'),
-                                    inputEl = scope.$findElementInTemplate(scope.$templates.main.wrapper, '.tg-typeahead__input');
+                                var mainWrapperEl = scope.$templates.main.wrapper,
+                                    inputContainerEl = scope.$findElementInTemplate(mainWrapperEl, '.tg-typeahead__input-container'),
+                                    inputEl = scope.$findElementInTemplate(mainWrapperEl, '.tg-typeahead__input');
 
                                 if (inputContainerEl && inputEl) {
                                     if (scope.$tags.length === 1) {
@@ -2067,7 +2073,7 @@
                                                 scope.$findElementInTemplate(scope.$templates.tagManager.wrapper, '.tg-typeahead__tag')
                                                     .each(function () {
                                                         tagEl = angular.element(this);
-                                                        tagWidth = tagEl.outerWidth() + parseInt(tagEl.css('margin-left')) + parseInt(tagEl.css('margin-right'));
+                                                        tagWidth = tagEl.outerWidth() + (parseInt(tagEl.css('margin-left')) || 0) + (parseInt(tagEl.css('margin-right')) || 0);
                                                         bottomRowWidth += tagWidth;
 
                                                         if (bottomRowWidth > maxWidth) {
