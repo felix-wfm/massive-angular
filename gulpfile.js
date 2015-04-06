@@ -37,12 +37,12 @@ var paths = {
             '!./app/assets/js/**/_*.js'				// excluded js files
         ],
         tests: [
-            './tests/**/*.js',					    // included test files
-            '!./tests/**/_*.js'					    // excluded test files
+            './unit/tests/**/*.js',					    // included test files
+            '!./unit/tests/**/_*.js'					    // excluded test files
         ],
         data: [
-            './tests/data/**/*.json',				// included data files
-            '!./tests/data/**/_*.json',             // excluded data files
+            './tests/unit/data/**/*.json',				// included data files
+            '!./tests/unit/data/**/_*.json',             // excluded data files
         ]
     },
     vendor: {
@@ -221,7 +221,8 @@ gulp.task('test.unit.run', function () {
 
 gulp.task('test.e2e', ['webdriver_update'], function (cb) {
     gulp.src(['./tests/e2e/spec/**/*.js']).pipe(protractor.protractor({
-        configFile: "tests/e2e/config/protractor.conf.js",
+        configFile: __dirname + '/tests/e2e/protractor.conf.js',
+        args: ['--baseUrl', 'http://localhost:3000']
     })).on('error', function (e) {
         console.log(e)
     }).on('end', cb);
