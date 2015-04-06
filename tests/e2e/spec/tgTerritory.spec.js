@@ -6,7 +6,7 @@ describe('tgTerritory', function () {
     tgTerritoryPage.get();
 
     it('should start with North America selected', function () {
-        expect(tgTerritoryPage.control.getText()).toEqual('North America');
+        expect(tgTerritoryPage.model.getText()).toEqual('North America');
     });
 
     // pop up tests
@@ -59,5 +59,42 @@ describe('tgTerritory', function () {
             tgTerritoryPage.popupHeaders.get(5).click();
         });
 
-    });    
+        it('should add a single country', function () {
+            tgTerritoryPage.popupHeaders.get(0).click();
+            tgTerritoryPage.popupCountries.get(0).click();
+
+            expect(tgTerritoryPage.popupCountryList.getText()).toEqual('Antigua and Barbuda');
+        });
+
+        it('should remove a single country', function () {
+            tgTerritoryPage.popupCountries.get(0).click();
+
+            expect(tgTerritoryPage.popupCountryList.getText()).toEqual('');
+            tgTerritoryPage.popupHeaders.get(0).click();
+            tgTerritoryPage.pageHeader.click();
+        });
+    });
+
+    describe('control', function () {
+        it('should add a single country from popup', function () {
+            tgTerritoryPage.globe.click();
+            tgTerritoryPage.popupHeaders.get(0).click();
+            tgTerritoryPage.popupCountries.get(0).click();
+            tgTerritoryPage.popupHeaders.get(0).click();
+
+            tgTerritoryPage.pageHeader.click();
+
+            expect(tgTerritoryPage.model.getText()).toEqual('Antigua and Barbuda');
+        });
+
+        it('should remove a single country from popup', function () {
+            tgTerritoryPage.globe.click();
+            tgTerritoryPage.popupHeaders.get(0).click();
+            tgTerritoryPage.popupCountries.get(0).click();
+
+            tgTerritoryPage.pageHeader.click();
+
+            expect(tgTerritoryPage.model.getText()).toEqual('');
+        });
+    });
 });
