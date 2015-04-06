@@ -3,84 +3,93 @@ var territoryPage = require('../pages/tgTerritory.js');
 describe('tgTerritory', function () {
     var tgTerritoryPage = new territoryPage();
 
-    tgTerritoryPage.get();
+    tgTerritoryPage.get();  // hit the tgTypeahead URL
 
     it('should start with North America selected', function () {
         expect(tgTerritoryPage.model.getText()).toEqual('North America');
     });
 
-    // pop up tests
+    // POPUP TESTS
     describe('popup', function () {
         it('should show a popup', function () {
-            tgTerritoryPage.globe.click();
+            tgTerritoryPage.popupButton.click();
 
             expect((tgTerritoryPage.popup).isDisplayed()).toBeTruthy();
         });
 
         it('should show all North American countries', function () {
-            tgTerritoryPage.popupHeaders.get(0).click();
+            tgTerritoryPage.getPopupHeader('North America').click();
 
             expect(tgTerritoryPage.popupCountries.count()).toEqual(24);
-            tgTerritoryPage.popupHeaders.get(0).click();
+
+            tgTerritoryPage.getPopupHeader('North America').click();
         });
 
         it('should show all European countries', function () {
-            tgTerritoryPage.popupHeaders.get(1).click();
+            tgTerritoryPage.getPopupHeader('Europe').click();
 
             expect(tgTerritoryPage.popupCountries.count()).toEqual(45);
-            tgTerritoryPage.popupHeaders.get(1).click();
+
+            tgTerritoryPage.getPopupHeader('Europe').click();
         });
 
         it('should show all South American countries', function () {
-            tgTerritoryPage.popupHeaders.get(2).click();
+            tgTerritoryPage.getPopupHeader('South America').click();
 
             expect(tgTerritoryPage.popupCountries.count()).toEqual(12);
-            tgTerritoryPage.popupHeaders.get(2).click();
+
+            tgTerritoryPage.getPopupHeader('South America').click();
         });
 
         it('should show all African countries', function () {
-            tgTerritoryPage.popupHeaders.get(3).click();
+            tgTerritoryPage.getPopupHeader('Africa').click();
 
             expect(tgTerritoryPage.popupCountries.count()).toEqual(55);
-            tgTerritoryPage.popupHeaders.get(3).click();
+
+            tgTerritoryPage.getPopupHeader('Africa').click();
         });
 
         it('should show all Asian countries', function () {
-            tgTerritoryPage.popupHeaders.get(4).click();
+            tgTerritoryPage.getPopupHeader('Asia').click();
 
             expect(tgTerritoryPage.popupCountries.count()).toEqual(48);
-            tgTerritoryPage.popupHeaders.get(4).click();
+
+            tgTerritoryPage.getPopupHeader('Asia').click();
         });
 
         it('should show all Australian and Oceania countries', function () {
-            tgTerritoryPage.popupHeaders.get(5).click();
+            tgTerritoryPage.getPopupHeader('Australia and Oceania').click();
 
             expect(tgTerritoryPage.popupCountries.count()).toEqual(16);
-            tgTerritoryPage.popupHeaders.get(5).click();
+
+            tgTerritoryPage.getPopupHeader('Australia and Oceania').click();
         });
 
         it('should add a single country', function () {
-            tgTerritoryPage.popupHeaders.get(0).click();
-            tgTerritoryPage.popupCountries.get(0).click();
+            tgTerritoryPage.getPopupHeader('North America').click();
+
+            tgTerritoryPage.getPopupCountry('Antigua and Barbuda').click();
 
             expect(tgTerritoryPage.popupCountryList.getText()).toEqual('Antigua and Barbuda');
         });
 
         it('should remove a single country', function () {
-            tgTerritoryPage.popupCountries.get(0).click();
+            tgTerritoryPage.getPopupCountry('Antigua and Barbuda').click();
 
             expect(tgTerritoryPage.popupCountryList.getText()).toEqual('');
-            tgTerritoryPage.popupHeaders.get(0).click();
+
+            tgTerritoryPage.getPopupHeader('North America').click();
             tgTerritoryPage.pageHeader.click();
         });
     });
 
+    // CONTROL TESTS
     describe('control', function () {
         it('should add a single country from popup', function () {
-            tgTerritoryPage.globe.click();
-            tgTerritoryPage.popupHeaders.get(0).click();
-            tgTerritoryPage.popupCountries.get(0).click();
-            tgTerritoryPage.popupHeaders.get(0).click();
+            tgTerritoryPage.popupButton.click();
+            tgTerritoryPage.getPopupHeader('North America').click();
+            tgTerritoryPage.getPopupCountry('Antigua and Barbuda').click();
+            tgTerritoryPage.getPopupHeader('North America').click();
 
             tgTerritoryPage.pageHeader.click();
 
@@ -88,9 +97,9 @@ describe('tgTerritory', function () {
         });
 
         it('should remove a single country from popup', function () {
-            tgTerritoryPage.globe.click();
-            tgTerritoryPage.popupHeaders.get(0).click();
-            tgTerritoryPage.popupCountries.get(0).click();
+            tgTerritoryPage.popupButton.click();
+            tgTerritoryPage.getPopupHeader('North America').click();
+            tgTerritoryPage.getPopupCountry('Antigua and Barbuda').click();
 
             tgTerritoryPage.pageHeader.click();
 
