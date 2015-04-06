@@ -7,7 +7,8 @@ var gulp = require('gulp'),
     imagemin = require('gulp-imagemin'),
     uglify = require('gulp-uglify'),
     connect = require('gulp-connect'),
-    karma = require('karma');
+    karma = require('karma'),
+    protractor = require("gulp-protractor");
 
 var port = '3000',
     env = process.env.NODE_ENV || 'dev',
@@ -204,16 +205,26 @@ gulp.task('release', function () {
     gulp.start('release.build');
 });
 
-gulp.task('test', function () {
+gulp.task('test.unit', function () {
     karma.server.start({
-        configFile: __dirname + '/tests/karma.conf.js',
+        configFile: __dirname + '/tests/unit/karma.conf.js',
         singleRun: true
     });
 });
 
-gulp.task('test.run', function () {
+gulp.task('test.unit.run', function () {
     karma.server.start({
-        configFile: __dirname + '/tests/karma.conf.js',
+        configFile: __dirname + '/tests/unit/karma.conf.js',
         singleRun: false
     });
 });
+
+gulp.task('test.e2e', ['webdriver_update'], function (cb) {
+    gulp.src(['./tests/e2e/spec/**/*.js']).pipe(protractor.protractor({
+        configFile: "tests/e2e/config/protractor.conf.js",
+    })).on('error', function (e) {
+        console.log(e)
+    }).on('end', cb);
+});
+
+gulp.task('webdriver_update', protractor.webdriver_update);
