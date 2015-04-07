@@ -9,6 +9,7 @@ var tgTerritoryPage = function () {
     this.popupCountryList = element.all(by.css('.tg-territory__popup-header')).get(1);
     this.popupHeaders = element.all(by.css('.tg-territory__cluster-header'));
     this.popupCountries = element.all(by.css('.tg-territory__cluster-country'));
+    this.popupRegions = element.all(by.css('tg-territory__cluster-region'));
 
     this.get = function () {
         browser.get('#/components/tgTerritory');
@@ -18,9 +19,17 @@ var tgTerritoryPage = function () {
         return element(by.cssContainingText('.tg-territory__cluster-header', continent));
     };
 
+    this.getPopupHeaderCheckbox = function (continent) {
+        return element(by.cssContainingText('.tg-territory__cluster-header', continent)).all(by.css('i')).last();
+    };
+
     this.getPopupCountry = function (country) {
-        return element(by.cssContainingText('li', country));
-    }
+        return element(by.cssContainingText('li.tg-territory__cluster-country', country));
+    };
+
+    this.getPopupRegion = function (region) {
+        return element(by.cssContainingText('li.tg-territory__cluster-region', region));
+    };
 };
 
 module.exports = tgTerritoryPage;
