@@ -109,12 +109,16 @@
             if (isArray(arr)) {
                 return (arr.length === 0);
             }
+
+            return true;
         }
 
         function has(arr, val) {
             if (isArray(arr)) {
                 return (arr.indexOf(val) !== -1);
             }
+
+            return false;
         }
 
         function naturalJoin(list, token, lastToken) {

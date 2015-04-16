@@ -153,13 +153,13 @@ describe('Unit: tgUtilities', function () {
     });
 
     it('should be empty', function () {
-        expect(tgUtilities.empty()).toBe(undefined);
+        expect(tgUtilities.empty()).toBe(true);
         expect(tgUtilities.empty([])).toBeTruthy();
         expect(tgUtilities.empty([null])).toBeFalsy();
     });
 
     it('should has item', function () {
-        expect(tgUtilities.has()).toBe(undefined);
+        expect(tgUtilities.has()).toBe(false);
         expect(tgUtilities.has([1,2,3], 2)).toBeTruthy();
         expect(tgUtilities.has([1,2,3], 4)).toBeFalsy();
     });

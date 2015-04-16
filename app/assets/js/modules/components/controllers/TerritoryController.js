@@ -1514,7 +1514,7 @@ angular.module('app')
             (function init() {
                 var data = tgTerritoryUtilities.prepareRawData($scope.source.data, ['WORLDWIDE','CLUSTER','REGION','COUNTRY']);
 
-                $scope.__territory.model1 = tgTerritoryUtilities.getTerritories([10005], data);
+                //$scope.__territory.model1 = tgTerritoryUtilities.getTerritories([10005], data);
             })();
         }
     ]);

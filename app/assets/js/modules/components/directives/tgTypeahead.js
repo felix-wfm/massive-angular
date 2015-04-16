@@ -29,57 +29,57 @@
     angular.module('tg.components')
         .run(['$templateCache', function ($templateCache) {
             $templateCache.put('tg-typeahead.tpl.html',
-                '<div class="tg-typeahead"\
+                '<div class="tg-typeahead" \
                       ng-class="tgTypeaheadWrapClass">\
                    <div tg-typeahead-render-template="$templates.main.header"></div>\
                    <div tg-typeahead-render-template="$templates.main.container"></div>\
                    <div tg-typeahead-render-template="$templates.main.footer"></div>\
-                   <div class="tg-typeahead__suggestions-wrap"\
+                   <div class="tg-typeahead__suggestions-wrap" \
                         tg-typeahead-render-template="$templates.popup.wrapper"></div>\
-                   <div class="tg-typeahead__suggestions-wrap"\
-                        ng-if="$stateHolder.hasSuggestions"\
+                   <div class="tg-typeahead__suggestions-wrap" \
+                        ng-if="$stateHolder.hasSuggestions" \
                         tg-typeahead-render-template="$templates.suggestedPopup.wrapper"></div>\
                 </div>');
 
             $templateCache.put('tg-typeahead-container.tpl.html',
-                '<div class="tg-typeahead__input-container"\
+                '<div class="tg-typeahead__input-container" \
                       ng-show="$isVisibleInput() && !$stateHolder.tagsTransformed">\
-                    <a href="" class="tg-typeahead__clear-link"\
+                    <a href="" class="tg-typeahead__clear-link" \
                        ng-show="!$stateHolder.loader && $isVisibleClear()"\
                        ng-click="$clear($event);">Remove All</a>\
-                    <div class="input-loader tg-typeahead__loader"\
+                    <div class="input-loader tg-typeahead__loader" \
                          ng-show="$stateHolder.loader"></div>\
                     <div class="tg-typeahead__input-wrap">\
                         <input type="text" class="tg-typeahead__input"\
-                               placeholder="{{ $getPlaceholder() }}"\
-                               ng-model="$term"\
+                               placeholder="{{ $getPlaceholder() }}" \
+                               ng-model="$term" \
                                ng-disabled="$isDisabled()">\
                     </div>\
                 </div>');
 
             $templateCache.put('tg-typeahead-popup.tpl.html',
-                '<ul class="tg-typeahead__suggestions"\
-                     ng-if="$stateHolder.popup.opened"\
+                '<ul class="tg-typeahead__suggestions" \
+                     ng-if="$stateHolder.popup.opened" \
                      ng-style="$templates.popup.wrapper.style">\
                     <li class="tg-typeahead__suggestions-header"\
                         tg-typeahead-render-template="$templates.popup.header"></li>\
-                    <li class="tg-typeahead__suggestions-container"\
+                    <li class="tg-typeahead__suggestions-container" \
                         tg-when-scrolled="$onPopupScrolled($event);">\
                         <div ng-repeat="$dataSet in $dataSets | filter:{ queried: { active: true } }">\
-                            <div class="tg-typeahead__suggestions-group-header"\
+                            <div class="tg-typeahead__suggestions-group-header" \
                                  tg-typeahead-render-template="$dataSet.templates.header || $templates.dataSet.header"></div>\
                             <ul class="tg-typeahead__suggestions-group">\
-                                <li class="tg-typeahead__suggestions-group-item"\
-                                    ng-repeat="$match in $dataSet.queried.matches | limitTo:$dataSet.queried.limit"\
+                                <li class="tg-typeahead__suggestions-group-item" \
+                                    ng-repeat="$match in $dataSet.queried.matches | limitTo:$dataSet.queried.limit" \
                                     ng-class="{ active: $index === $dataSet.queried.activeIndex, selected: $match.selected, disabled: $match.disabled }">\
                                     <div tg-typeahead-render-template="$dataSet.templates.item || $templates.dataSet.item"></div>\
                                 </li>\
                             </ul>\
-                            <div class="tg-typeahead__suggestions-group-footer"\
+                            <div class="tg-typeahead__suggestions-group-footer" \
                                  tg-typeahead-render-template="$dataSet.templates.footer || $templates.dataSet.footer"></div>\
                         </div>\
                     </li>\
-                    <li class="tg-typeahead__suggestions-footer"\
+                    <li class="tg-typeahead__suggestions-footer" \
                         tg-typeahead-render-template="$templates.popup.footer"></li>\
                 </ul>');
 
@@ -87,28 +87,28 @@
                 '<span ng-bind-html="$match.value | tgTrustedHtml"></span>');
 
             $templateCache.put('tg-typeahead-suggested-popup.tpl.html',
-                '<ul class="tg-typeahead__suggestions"\
-                     ng-if="$stateHolder.suggestedPopup.opened"\
+                '<ul class="tg-typeahead__suggestions" \
+                     ng-if="$stateHolder.suggestedPopup.opened" \
                      ng-style="$templates.suggestedPopup.wrapper.style">\
-                    <li class="tg-typeahead__suggestions-header"\
+                    <li class="tg-typeahead__suggestions-header" \
                         tg-typeahead-render-template="$templates.suggestedPopup.header"></li>\
-                    <li class="tg-typeahead__suggestions-container"\
+                    <li class="tg-typeahead__suggestions-container" \
                         tg-when-scrolled="$onPopupScrolled($event);">\
                         <div ng-repeat="$dataSet in $dataSets | filter:{ suggested: { active: true } }">\
-                            <div class="tg-typeahead__suggestions-group-header"\
+                            <div class="tg-typeahead__suggestions-group-header" \
                                  tg-typeahead-render-template="$dataSet.templates.header || $templates.dataSet.header"></div>\
                             <ul class="tg-typeahead__suggestions-group">\
-                                <li class="tg-typeahead__suggestions-group-item"\
-                                    ng-repeat="$match in $dataSet.suggested.matches | limitTo:$dataSet.suggested.limit"\
+                                <li class="tg-typeahead__suggestions-group-item" \
+                                    ng-repeat="$match in $dataSet.suggested.matches | limitTo:$dataSet.suggested.limit" \
                                     ng-class="{ active: $index === $dataSet.suggested.activeIndex, selected: $match.selected, disabled: $match.disabled }">\
                                     <div tg-typeahead-render-template="$dataSet.templates.item || $templates.dataSet.item"></div>\
                                 </li>\
                             </ul>\
-                            <div class="tg-typeahead__suggestions-group-footer"\
+                            <div class="tg-typeahead__suggestions-group-footer" \
                                  tg-typeahead-render-template="$dataSet.templates.footer || $templates.dataSet.footer"></div>\
                         </div>\
                     </li>\
-                    <li class="tg-typeahead__suggestions-footer"\
+                    <li class="tg-typeahead__suggestions-footer" \
                         tg-typeahead-render-template="$templates.suggestedPopup.footer"></li>\
                 </ul>');
 
@@ -116,26 +116,53 @@
                 '<span ng-bind-html="$match.value | tgTrustedHtml"></span>');
 
             $templateCache.put('tg-typeahead-tag-manager.tpl.html',
-                '<div class="tg-typeahead__tag-manager"\
-                      ng-class="$templates.tagManager.wrapper.class"\
+                '<div class="tg-typeahead__tag-manager" \
+                      ng-class="$templates.tagManager.wrapper.class" \
                       ng-style="$templates.tagManager.wrapper.style">\
-                   <div ng-if="!$stateHolder.tagsTransformed"\
+                   <div ng-if="!$stateHolder.tagsTransformed" \
                         ng-repeat="$tag in $tags | orderBy:$tagsOrder">\
                        <div tg-typeahead-render-template="$templates.tagManager.tag"></div>\
                    </div>\
-                   <div class="tg-typeahead__tags-text"\
+                   <div class="tg-typeahead__tags-text" \
                         ng-if="$stateHolder.tagsTransformed">{{ $getTagsText() }}</div>\
                 </div>');
 
             $templateCache.put('tg-typeahead-tag.tpl.html',
                 '<div class="tg-typeahead__tag">\
-                    <span class="tg-typeahead__tag-remove fa fa-times" rel="tooltip"\
-                          tooltip-html-unsafe="delete"\
-                          tooltip-placement="right"\
-                          ng-class="{\'disabled\': $isDisabled()}"\
+                    <span class="tg-typeahead__tag-remove fa fa-times" rel="tooltip" \
+                          tooltip-html-unsafe="delete" \
+                          tooltip-placement="right" \
+                          ng-class="{\'disabled\': $isDisabled()}" \
                           ng-click="!$isDisabled() && $removeTag($tag)"></span>\
-                    <span class="tg-typeahead__tag-name"\
+                    <span class="tg-typeahead__tag-name" \
                           ng-bind-html="$tag.match.value | tgTrustedHtml"></span>\
+                </div>');
+
+            $templateCache.put('tg-typeahead-filter-manager.tpl.html',
+                '<div class="tg-typeahead__tag-manager">\
+                    <div ng-repeat="$filterTag in $filters.tags">\
+                        <div tg-typeahead-render-template="$templates.filterManager.tag"></div>\
+                    </div>\
+                </div>');
+
+            $templateCache.put('tg-typeahead-filter-tag.tpl.html',
+                '<div class="tg-typeahead__tag-wrap">\
+                    <div style="display: table-cell; vertical-align: top;" ng-switch="!!$filterTag.match">\
+                        <div class="tg-typeahead__tag-filter" ng-switch-when="true" ng-bind-html="$filterTag.filter.value | tgTrustedHtml"></div>\
+                        <select class="tg-typeahead__tag-filter" \
+                                ng-model="$filterTag.filter" \
+                                ng-change="$onFilterTypeSelect($filterTag, $filterTag.filter);" \
+                                ng-options="filter.value for filter in $filterTag.filters track by filter.type" \
+                                ng-switch-default=""></select>\
+                    </div>\
+                    <div class="tg-typeahead__tag" style="display: table-cell; vertical-align: top;" ng-show="$filterTag.match !== null">\
+                       <span class="tg-typeahead__tag-remove fa fa-times" rel="tooltip" \
+                             tooltip-placement="right" \
+                             tooltip-html-unsafe="delete" \
+                             ng-class="{\'disabled\': $isDisabled()}" \
+                             ng-click="!$isDisabled() && removeFilterTag($filterTag)"></span>\
+                       <span class="tg-typeahead__tag-name" ng-bind-html="$filterTag.match | tgTrustedHtml"></span>\
+                    </div>\
                 </div>');
         }])
         .directive('tgTypeahead', ['$tgComponents', '$injector', '$http', '$compile', '$parse', '$q', '$timeout', '$document',
@@ -424,6 +451,7 @@
 
                             scope.$openPopup = function () {
                                 if (!scope.$stateHolder.popup.opened) {
+                                    scope.$stateHolder.suggestedPopup.opened = false;
                                     scope.$stateHolder.popup.opened = true;
 
                                     scope.selectDataSet(null);
@@ -1059,39 +1087,41 @@
                             function renderMainContainer(tpl) {
                                 var inputEl = scope.$findElementInTemplate(scope.$templates.main.wrapper, '.tg-typeahead__input');
 
-                                inputEl.on('click', function () {
-                                    var isOpenedPopup = scope.$stateHolder.popup.opened;
+                                if (inputEl) {
+                                    inputEl.on('click', function () {
+                                        var isOpenedPopup = scope.$stateHolder.popup.opened;
 
-                                    scope.$closePopup();
+                                        scope.$closePopup();
 
-                                    if (scope.$stateHolder.hasSuggestions && !isOpenedPopup) {
-                                        scope.$resolveSuggestedSources();
-                                    }
-                                });
+                                        if (scope.$stateHolder.hasSuggestions && !isOpenedPopup) {
+                                            scope.$resolveSuggestedSources();
+                                        }
+                                    });
 
-                                var inputNgModelCtrl = inputEl.controller('ngModel');
+                                    var inputNgModelCtrl = inputEl.controller('ngModel');
 
-                                inputNgModelCtrl.$parsers.unshift(function (val) {
-                                    val = val || '';
+                                    inputNgModelCtrl.$parsers.unshift(function (val) {
+                                        val = val || '';
 
-                                    if (timeoutPromise) {
-                                        $timeout.cancel(timeoutPromise);
-                                    }
+                                        if (timeoutPromise) {
+                                            $timeout.cancel(timeoutPromise);
+                                        }
 
-                                    scope.$closePopup();
+                                        scope.$closePopup();
 
-                                    scope.$applyMatch(null, null);
+                                        scope.$applyMatch(null, null);
 
-                                    if (val.length >= options.minLength) {
-                                        timeoutPromise = $timeout(function () {
-                                            if (scope.$term) {
-                                                scope.$resolveSources(val);
-                                            }
-                                        }, options.delay);
-                                    }
+                                        if (val.length >= options.minLength) {
+                                            timeoutPromise = $timeout(function () {
+                                                if (scope.$term) {
+                                                    scope.$resolveSources(val);
+                                                }
+                                            }, options.delay);
+                                        }
 
-                                    return val;
-                                });
+                                        return val;
+                                    });
+                                }
                             }
                         }
 
@@ -2070,8 +2100,10 @@
                                                 var bottomRowWidth = 0,
                                                     tagEl, tagWidth;
 
-                                                scope.$findElementInTemplate(scope.$templates.tagManager.wrapper, '.tg-typeahead__tag')
-                                                    .each(function () {
+                                                var tagsEls = scope.$findElementInTemplate(scope.$templates.tagManager.wrapper, '.tg-typeahead__tag');
+
+                                                if (tagsEls) {
+                                                    tagsEls.each(function () {
                                                         tagEl = angular.element(this);
                                                         tagWidth = tagEl.outerWidth() + (parseInt(tagEl.css('margin-left')) || 0) + (parseInt(tagEl.css('margin-right')) || 0);
                                                         bottomRowWidth += tagWidth;
@@ -2080,6 +2112,7 @@
                                                             bottomRowWidth = tagWidth;
                                                         }
                                                     });
+                                                }
 
                                                 return bottomRowWidth;
                                             }());
@@ -2112,6 +2145,285 @@
                                     }
                                 }
                             }
+                        }
+
+                        return {
+                            pre: preLink,
+                            post: undefined
+                        };
+                    }
+                };
+            }
+        ])
+        .directive('tgTypeaheadFilterManager', ['$injector', '$q',
+            function ($injector, $q) {
+                return {
+                    restrict: 'A',
+                    require: ['tgTypeahead'],
+                    scope: false,
+                    priority: 2,
+                    compile: function (tElement, tAttrs) {
+                        var maxUsedFilters = parseInt(tAttrs.tgTypeaheadMaxUsedFilters) || 0,
+                            RenderTemplateModel = $injector.get('tgTypeaheadRenderTemplateModel'),
+                            FilterTagModel = $injector.get('tgTypeaheadFilterTagModel');
+
+                        function preLink(scope, element, attrs, controllers) {
+                            var tgTypeaheadCtrl = controllers[0];
+
+                            scope = tgTypeaheadCtrl.$scope;
+
+                            // Set Templates
+                            scope.$templates.filterManager = {
+                                wrapper: new RenderTemplateModel('filterManager.wrapper', attrs.tgTypeaheadFilterManagerTemplateUrl || 'tg-typeahead-filter-manager.tpl.html'),
+                                tag: new RenderTemplateModel('filterManager.tag', attrs.tgTypeaheadFilterTagTemplateUrl || 'tg-typeahead-filter-tag.tpl.html')
+                            };
+
+                            scope.$templates.main.header = scope.$templates.filterManager.wrapper;
+
+                            scope.$filters = {
+                                tags: [],
+                                active: null
+                            };
+
+                            // internal functionality
+                            scope.initFilterManager = function () {
+                                scope.clearFilterTags();
+                                scope.$clearTypeahead();
+
+                                scope.addFilterTag(new FilterTagModel(null))
+                                    .then(function (filterTag) {
+                                        scope.$filters.active = filterTag;
+                                    });
+                            };
+
+                            scope.canAddFilterTag = function () {
+                                return (maxUsedFilters === 0 || maxUsedFilters > scope.$filters.tags.length);
+                            };
+
+                            scope.addFilterTag = function (filterTag) {
+                                if (filterTag && !filterTag.match && scope.canAddFilterTag()) {
+                                    var evt = {
+                                        context: scope.tgTypeaheadContext,
+                                        filterTag: filterTag
+                                    };
+
+                                    return tgTypeaheadCtrl.events.emit('onFilterTagAdding', evt)
+                                        .then(function () {
+                                            scope.$filters.tags.push(filterTag);
+
+                                            tgTypeaheadCtrl.events.emit('onFilterTagAdded', evt);
+
+                                            return filterTag;
+                                        });
+                                }
+
+                                return $q.when(undefined);
+                            };
+
+                            scope.removeFilterTag = function (filterTag) {
+                                var idx = scope.$filters.tags.indexOf(filterTag);
+
+                                if (idx !== -1) {
+                                    var evt = {
+                                        context: scope.tgTypeaheadContext,
+                                        filterTag: filterTag
+                                    };
+
+                                    return tgTypeaheadCtrl.events.emit('onFilterTagRemoving', evt)
+                                        .then(function () {
+                                            scope.$filters.tags.splice(idx, 1);
+
+                                            scope.selectFilterMatch(null, filterTag);
+
+                                            tgTypeaheadCtrl.events.emit('onFilterTagRemoved', evt);
+
+                                            return true;
+                                        });
+                                }
+
+                                return $q.when(false);
+                            };
+
+                            scope.clearFilterTags = function () {
+                                scope.$filters.tags.length = 0;
+                            };
+
+                            scope.selectFilterMatch = function (match, filterTag) {
+                                filterTag = filterTag || scope.$filters.active;
+
+                                if (filterTag) {
+                                    filterTag.match = match;
+
+                                    var lastFilterTag = null,
+                                        len = scope.$filters.tags.length;
+
+                                    if (len > 0) {
+                                        lastFilterTag = scope.$filters.tags[len - 1];
+                                    }
+
+                                    if (!lastFilterTag || lastFilterTag.match) {
+                                        scope.addFilterTag(new FilterTagModel(null))
+                                            .then(function (newFilterTag) {
+                                                scope.$filters.active = newFilterTag;
+                                            });
+                                    }
+                                }
+
+                                scope.$clearTypeahead();
+                                scope.$closePopup();
+                            };
+
+                            scope.getAppliedFilters = function () {
+                                var filters = [];
+
+                                scope.$filters.tags.forEach(function (filterTag) {
+                                    if (filterTag.filter && filterTag.match) {
+                                        filters.push({
+                                            type: filterTag.filter.type,
+                                            value: filterTag.match,
+                                            tag: filterTag
+                                        });
+                                    }
+                                });
+
+                                return filters;
+                            };
+
+                            scope.$onFilterTypeSelect = function (filterTag, filter) {
+                                var evt = {
+                                    context: scope.tgTypeaheadContext,
+                                    filterTag: filterTag,
+                                    filter: filter
+                                };
+
+                                return tgTypeaheadCtrl.events.emit('onFilterTypeSelecting', evt)
+                                    .then(function () {
+                                        tgTypeaheadCtrl.events.emit('onFilterTypeSelected', evt);
+                                    });
+                            };
+
+                            /**
+                             * tgTypeahead methods overrides
+                             */
+                            tgTypeaheadCtrl.$overrideFn('$prepareSourceContext', function (locals) {
+                                return {
+                                    filters: scope.getAppliedFilters(),
+                                    currentFilter: scope.$filters.active
+                                };
+                            });
+
+                            /**
+                             * tgTypeaheadTagManager methods overrides
+                             */
+                            tgTypeaheadCtrl.$overrideFn('$isVisibleInput', function () {
+                                var result = this.$baseFn(),
+                                    count = 0;
+
+                                if (result) {
+                                    scope.$filters.tags.forEach(function (filterTag) {
+                                        if (filterTag.match) {
+                                            count++;
+                                        }
+                                    });
+
+                                    if (maxUsedFilters > 0 && maxUsedFilters <= count) {
+                                        result = false;
+                                    }
+                                }
+
+                                if (result) {
+                                    scope.$updateInputElement();
+                                }
+
+                                return result;
+                            });
+
+                            tgTypeaheadCtrl.$overrideFn('$updateInputElement', function () {
+                                adjustInputElWidth();
+                            });
+
+                            /**
+                             * tgTypeahead events handlers
+                             */
+                            tgTypeaheadCtrl.events.on('onMatchSelected', function () {
+                                scope.clearFilterTags();
+                            });
+
+                            tgTypeaheadCtrl.initFilterManager = function () {
+                                scope.initFilterManager();
+                            };
+
+                            tgTypeaheadCtrl.getAppliedFilters = function () {
+                                return scope.getAppliedFilters();
+                            };
+
+                            tgTypeaheadCtrl.getCurrentFilter = function () {
+                                return scope.$filter.active;
+                            };
+
+                            tgTypeaheadCtrl.refreshFilters = function () {
+                                var evt = {
+                                    context: scope.tgTypeaheadContext,
+                                    filterTags: scope.$filters.tags
+                                };
+
+                                tgTypeaheadCtrl.events.emit('onFilterTagsChange', evt);
+                            };
+
+                            /**
+                             * watches
+                             */
+                            scope.$watchCollection('$filters.tags', function () {
+                                tgTypeaheadCtrl.refreshFilters();
+                            }, true);
+
+                            /*
+                             * private methods
+                             */
+                            function adjustInputElWidth() {
+                                var inputContainerEl = scope.$findElementInTemplate(scope.$templates.main.wrapper, '.tg-typeahead__input-container'),
+                                    inputEl = scope.$findElementInTemplate(scope.$templates.main.wrapper, '.tg-typeahead__input');
+
+                                if (inputContainerEl && inputEl) {
+                                    var maxWidth = element.width(),
+                                        listWidth = (function () {
+                                            var bottomRowWidth = 0,
+                                                tagEl, tagWidth;
+
+                                            var tagsEls = scope.$findElementInTemplate(scope.$templates.filterManager.wrapper, '.tg-typeahead__tag-wrap');
+
+                                            if (tagsEls) {
+                                                tagsEls.each(function () {
+                                                    tagEl = angular.element(this);
+                                                    tagWidth = tagEl.outerWidth() + parseInt(tagEl.css('margin-left')) + parseInt(tagEl.css('margin-right'));
+                                                    bottomRowWidth += tagWidth;
+
+                                                    if (bottomRowWidth > maxWidth) {
+                                                        bottomRowWidth = tagWidth;
+                                                    }
+                                                });
+                                            }
+
+                                            return bottomRowWidth;
+                                        }());
+
+                                    if (listWidth > 0) {
+                                        var diff = maxWidth - listWidth,
+                                            queryInputWidth = (diff < 100) ? maxWidth : diff;
+
+                                        if (queryInputWidth >= 21) {
+                                            queryInputWidth -= 21;
+                                        }
+
+                                        inputContainerEl.css('width', queryInputWidth + 'px');
+                                        return;
+                                    }
+
+                                    inputContainerEl.css('width', '100%');
+                                }
+                            }
+
+                            scope.initFilterManager();
                         }
 
                         return {
@@ -2268,5 +2580,14 @@
             }
 
             return TagModelFactory;
+        }])
+        .factory('tgTypeaheadFilterTagModel', [function () {
+            function FilterTagModelFactory(match) {
+                this.match = match;
+                this.filter = undefined;
+                this.filters = [];
+            }
+
+            return FilterTagModelFactory;
         }]);
 })();
