@@ -9,6 +9,9 @@
         "gulp-csso": "*",
         "gulp-uglify": "*",
         "gulp-connect": "*",
-        "del": "*"
+        "del": "*",
+        "karma": "*",
+        "karma-jasmine": "*",
+        "karma-phantomjs-launcher": "*"
     }
 }

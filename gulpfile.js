@@ -4,7 +4,8 @@ var gulp = require('gulp'),
     csso = require('gulp-csso'),
     uglify = require('gulp-uglify'),
     connect = require('gulp-connect'),
-    del = require('del');
+    del = require('del'),
+    karma = require('karma');
 
 var port = '3000',
     env = process.env.NODE_ENV || 'dev',
@@ -33,8 +34,12 @@ var paths = {
             '!./app/assets/js/**/_*.js'				// excluded js files
         ],
         tests: [
-            './app/tests/**/*.js',					// included test files
-            '!./app/tests/**/_*.js'					// excluded test files
+            './tests/**/*.js',					    // included test files
+            '!./tests/**/_*.js'					    // excluded test files
+        ],
+        data: [
+            './tests/data/**/*.json',				// included data files
+            '!./tests/data/**/_*.json'              // excluded data files
         ]
     },
     vendor: {
@@ -88,6 +93,12 @@ gulp.task('app.scripts', function () {
         .pipe(connect.reload());
 });
 
+gulp.task('app.data', function () {
+    return gulp.src(paths.app.data)
+        .pipe(gulp.dest(paths.dev + '/api'))
+        .pipe(connect.reload());
+});
+
 gulp.task('vendor.styles', function () {
     return gulp.src(paths.vendor.styles)
         .pipe(less())
@@ -117,7 +128,7 @@ gulp.task('dev.clean', function (cb) {
 
 gulp.task('dev.build', ['dev.clean'], function () {
     gulp.start(
-        'app.templates', 'app.styles', 'app.images', 'app.scripts',
+        'app.templates', 'app.styles', 'app.images', 'app.scripts', 'app.data',
         'vendor.styles', 'vendor.fonts', 'vendor.images', 'vendor.scripts'
     );
 });
@@ -127,6 +138,7 @@ gulp.task('dev.watch', function () {
     gulp.watch(paths.app.styles, ['app.styles']);
     gulp.watch(paths.app.images, ['app.images']);
     gulp.watch(paths.app.scripts, ['app.scripts']);
+    gulp.watch(paths.app.data, ['app.data']);
 });
 
 gulp.task('dev', ['dev.build'], function () {
@@ -177,8 +189,29 @@ gulp.task('release.build', ['release.clean'], function () {
         .pipe(concat('vendor.js'))
         .pipe(uglify())
         .pipe(gulp.dest(paths.release + '/js'));
+
+    gulp.src(paths.app.data)
+        .pipe(gulp.dest(paths.release + '/api'));
 });
 
 gulp.task('release', function () {
     gulp.start('release.build');
+});
+
+gulp.task('test', function () {
+    var server = new karma.Server({
+        configFile: __dirname + '/tests/karma.conf.js',
+        singleRun: true
+    });
+
+    server.start();
+});
+
+gulp.task('test.run', function () {
+    var server = new karma.Server({
+        configFile: __dirname + '/tests/karma.conf.js',
+        singleRun: false
+    });
+
+    server.start();
 });

@@ -1,59 +1,174 @@
-angular.module('app')
-	.factory('utilities', [
-		function () {
-			'use strict';
+(function () {
+    'use strict';
 
-			function each(obj, fn) {
-				var result;
+    angular.module('tg.components')
+        .factory('tgUtilities', tgUtilities);
 
-				if (angular.isArray(obj)) {
-					for (var i = 0, n = obj.length; i < n; i++) {
-						result = fn(obj[i], i, obj);
+    tgUtilities.$inject = [];
 
-						if (result !== undefined) {
-							return result;
-						}
-					}
-				} else if (angular.isObject(obj)) {
-					for (var key in obj) {
-						result = fn(obj[key], key, obj);
+    function tgUtilities() {
+        function isType(obj, typeStr) {
+            return (Object.prototype.toString.call(obj) === typeStr);
+        }
 
-						if (result !== undefined) {
-							return result;
-						}
-					}
-				}
-			}
+        function isObject(obj) {
+            return isType(obj, '[object Object]');
+        }
 
-			function select(obj, fnProp, unique) {
-				var result = [];
+        function isArray(obj) {
+            return isType(obj, '[object Array]');
+        }
 
-				this.each(obj, function (val, key) {
-					var r = fnProp(val, key, obj);
+        function isFunction(obj) {
+            return isType(obj, '[object Function]');
+        }
 
-					if (r !== undefined) {
-						if (!unique || result.indexOf(r) === -1) {
-							result.push(r);
-						}
-					}
-				});
+        function forEach(obj, fn) {
+            if (obj && isFunction(fn)) {
+                if (isArray(obj)) {
+                    for (var i = 0, n = obj.length; i < n; i++) {
+                        fn(obj[i], i, obj);
+                    }
+                } else if (isObject(obj)) {
+                    for (var key in obj) {
+                        if (obj.hasOwnProperty(key)) {
+                            fn(obj[key], key, obj);
+                        }
+                    }
+                }
+            }
+        }
 
-				return result;
-			}
+        function each(obj, fn, defaultValue) {
+            if (obj && isFunction(fn)) {
+                var result;
 
-			function empty(arr) {
-				return (!arr || arr.length === 0);
-			}
+                if (isArray(obj)) {
+                    for (var i = 0, n = obj.length; i < n; i++) {
+                        result = fn(obj[i], i, obj);
 
-			function has(arr, val) {
-				return (arr && arr.indexOf(val) > -1);
-			}
+                        if (result !== undefined) {
+                            return result;
+                        }
+                    }
+                } else if (isObject(obj)) {
+                    for (var key in obj) {
+                        if (obj.hasOwnProperty(key)) {
+                            result = fn(obj[key], key, obj);
 
-			return {
-				each: each,
-				select: select,
-				empty: empty,
-				has: has
-			};
-		}
-	]);
+                            if (result !== undefined) {
+                                return result;
+                            }
+                        }
+                    }
+                }
+            }
+
+            return defaultValue;
+        }
+
+        function select(obj, fnProp, unique) {
+            var result = [];
+
+            forEach(obj, function (val, key) {
+                var r = fnProp(val, key, obj);
+
+                if (r !== undefined) {
+                    if (!unique || result.indexOf(r) === -1) {
+                        result.push(r);
+                    }
+                }
+            });
+
+            return result;
+        }
+
+        function expandArray(arr) {
+            if (arr && isArray(arr)) {
+                var r = [];
+
+                return arr.reduce(function (it1, it2) {
+                    if (it1 && isArray(it1)) {
+                        r = it1;
+                    } else {
+                        r.push(it1);
+                    }
+
+                    if (it2 && isArray(it2)) {
+                        r = r.concat(it2);
+                    } else {
+                        r.push(it2);
+                    }
+
+                    return r;
+                });
+            }
+        }
+
+        function empty(arr) {
+            if (isArray(arr)) {
+                return (arr.length === 0);
+            }
+
+            return true;
+        }
+
+        function has(arr, val) {
+            if (isArray(arr)) {
+                return (arr.indexOf(val) !== -1);
+            }
+
+            return false;
+        }
+
+        function naturalJoin(list, token, lastToken) {
+            if (empty(list) === false) {
+                var joinedList = [];
+
+                list = list.slice();
+                token = token || ', ';
+                lastToken = lastToken || ' and ';
+
+                var lastItem = list.pop();
+
+                if (list.length) {
+                    joinedList.push(list.join(token));
+                }
+
+                joinedList.push(lastItem);
+
+                return joinedList.join(lastToken);
+            }
+        }
+
+        function sort(arr, fn) {
+            if (isArray(arr)) {
+                if (isFunction(fn)) {
+                    arr.sort(function (it1, it2) {
+                        var r = fn(it1, it2);
+
+                        return (r > 0) ? 1 : ((r < 0) ? -1 : 0);
+                    });
+                } else {
+                    arr.sort();
+                }
+
+                return arr;
+            }
+        }
+
+        return {
+            isObject: isObject,
+            isArray: isArray,
+            isFunction: isFunction,
+            forEach: forEach,
+            each: each,
+            select: select,
+            expandArray: expandArray,
+            empty: empty,
+            has: has,
+            naturalJoin: naturalJoin,
+            sort: sort
+        };
+    }
+})();

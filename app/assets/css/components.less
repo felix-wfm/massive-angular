@@ -33,6 +33,7 @@
     padding: 3px 3px 0;
 
     .tg-typeahead__input-container {
+        position: relative
         float: left;
         margin-bottom: 3px;
         width: 100%;
@@ -49,6 +50,7 @@
         line-height: 19px;
         margin: 0;
         border: none;
+        display: block;
 
         &:focus {
             .box-shadow(none);
@@ -135,6 +137,44 @@
         height: 19px;
         margin: 0;
         padding: 0 5px;
+    }
+
+    .tg-typeahead__tags-text {
+        height: 19px;
+        line-height: 19px;
+        padding: 0 5px;
+        margin: 0 15px 3px 0;
+        overflow: hidden;
+        text-align: left;
+        white-space: nowrap;
+        text-decoration: none;
+        -ms-text-overflow: ellipsis;
+        -o-text-overflow: ellipsis;
+        text-overflow: ellipsis;
+        border-bottom: 1px solid transparent;
+        cursor: pointer;
+
+        &:after {
+            display: none;
+            content: '\f040';
+            position: absolute;
+            right: 2px;
+            bottom: 5px;
+            color: #d0d0d0;
+            font: normal normal normal 14px/1 FontAwesome;
+            font-size: inherit;
+            text-rendering: auto;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        &:hover {
+            border-bottom-color: #d0d0d0;
+
+            &:after {
+                display: block;
+            }
+        }
     }
 
     .tg-typeahead__text-overflow {
@@ -476,4 +516,164 @@ div.ng-invalid-required[tg-dropdown] {
     display: block;
     text-overflow: ellipsis;
     white-space: nowrap;
+}
+/* --------------------------------------- */
+/* - TG TERRITORY                          */
+/* --------------------------------------- */
+.tg-territory {
+    .tg-typeahead__suggestions-group-item.disabled {
+        color: #ccc;
+    }
+}
+.tg-territory__input-container {
+    .clearfix();
+}
+.tg-territory__input {
+    float: left;
+}
+.tg-territory__globe-button {
+    background: top url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABYAAAAWCAYAAADEtGw7AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAA2hpVFh0WE1MOmNvbS5hZG9iZS54bXAAAAAAADw/eHBhY2tldCBiZWdpbj0i77u/IiBpZD0iVzVNME1wQ2VoaUh6cmVTek5UY3prYzlkIj8+IDx4OnhtcG1ldGEgeG1sbnM6eD0iYWRvYmU6bnM6bWV0YS8iIHg6eG1wdGs9IkFkb2JlIFhNUCBDb3JlIDUuMC1jMDYwIDYxLjEzNDc3NywgMjAxMC8wMi8xMi0xNzozMjowMCAgICAgICAgIj4gPHJkZjpSREYgeG1sbnM6cmRmPSJodHRwOi8vd3d3LnczLm9yZy8xOTk5LzAyLzIyLXJkZi1zeW50YXgtbnMjIj4gPHJkZjpEZXNjcmlwdGlvbiByZGY6YWJvdXQ9IiIgeG1sbnM6eG1wTU09Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC9tbS8iIHhtbG5zOnN0UmVmPSJodHRwOi8vbnMuYWRvYmUuY29tL3hhcC8xLjAvc1R5cGUvUmVzb3VyY2VSZWYjIiB4bWxuczp4bXA9Imh0dHA6Ly9ucy5hZG9iZS5jb20veGFwLzEuMC8iIHhtcE1NOk9yaWdpbmFsRG9jdW1lbnRJRD0ieG1wLmRpZDo0MjFGQ0M0ODBGMjA2ODExODIyQURBMTJFOTZFQ0EwNSIgeG1wTU06RG9jdW1lbnRJRD0ieG1wLmRpZDo0NzlBMDJBQUQ0QkMxMUUyOTJCQUMxRDgyMDIyNzVDMCIgeG1wTU06SW5zdGFuY2VJRD0ieG1wLmlpZDo0NzlBMDJBOUQ0QkMxMUUyOTJCQUMxRDgyMDIyNzVDMCIgeG1wOkNyZWF0b3JUb29sPSJBZG9iZSBQaG90b3Nob3AgQ1M2IChNYWNpbnRvc2gpIj4gPHhtcE1NOkRlcml2ZWRGcm9tIHN0UmVmOmluc3RhbmNlSUQ9InhtcC5paWQ6MTVEMjEyQTYxRDIwNjgxMTgyMkFEQTEyRTk2RUNBMDUiIHN0UmVmOmRvY3VtZW50SUQ9InhtcC5kaWQ6NDIxRkNDNDgwRjIwNjgxMTgyMkFEQTEyRTk2RUNBMDUiLz4gPC9yZGY6RGVzY3JpcHRpb24+IDwvcmRmOlJERj4gPC94OnhtcG1ldGE+IDw/eHBhY2tldCBlbmQ9InIiPz4C/Tt0AAADtUlEQVR42qxVWSitaxh+1jrLsM0yZMgsU6YMCSWZSqIQGdrbxamTZCgXksJOhHKh5OaIC8dQlJIhQxGJXHAhYy1ckEJ2hpLZWc979tKyjn1ycZ76Vv//f9//vO//vM/7LsXr6ys0+KZZcqGLq6srqNVqbG5u4vj4GAqFAs7OzvD394ePjw+srKzwARSadaj6eWOsu3N9fY3+/n50d3djbW0NTk5OsLe3x/39Pc7OznBxcYGwsDAUFxcjNzcXlpaW+uRGip8Z/6F9QqLKykqsrq4iPz8f6enpcHd3h6GhIczMzHB5eYm9vT2Mjo5icHAQsbGxaG9vR0REhC6x+h3x/Pw8CgoK8PDwgJaWFjlsYWGBhoYGeHl5obq6WgIQLy8vcr6srEyC9fX1ISEh4d/EzCItLQ37+/twcXFBRkYGNjY25EUGsLGxgbm5ueisC0qTmZmJo6MjzMzMwM/PT4iV/L27u8P379+FlOAhZsACRUVFwcPDQzIn6fPzsxSUehPUfnh4WJ5XVVXh6enpnwpqMv46NTX1JTs7G7e3t/IwMjISbW1tiIuLg35RKyoqsLKygqSkJMTHx8PExASpqakYGhpCXl6eZJ2cnKxWaCJ81Rz+0tnZiZKSEgQEBHBDstVHTU0Nmpub3+6NjY2FeHx8HOHh4YiOjoa3tzd6e3vVKlpnYWEBdnZ2Yp+goKCPvClepjy6oIRcGiIh5Vf09PTg/PwcShr/9PRUMt3d3cWvwATYMB9hZGRE5PH09JRAh4eHUNIqLERhYSHc3NzexNeHr68vQkND5Zru0HcGG2V7exvW1tZiP6WRkZH4lt3DrPXtpIWDg4N04tzcHAYGBsSSuggJCREZmRi9ruILvKAk7Kz/AgvD9fj4KNnTltqgHR0dmJycxM3NjQRVOjo6SkUXFxelmz4DAwMDpKSkvHMHG4g6UzJXV1coaZesrCyxDCv/WbDyWrDd19fXxcNFRUUwNTUFO++v0tLSP1nRurq6TxPzZUKlUknh2SBMMicnR+qk1B6sr6/H2NiYDJ/PgFPN1tZW5jNnSldXF1pbW0Vv4jfOCCI4ODictuM9tabudMyvQB3p7a2tLUxPT8vkKy8v127/eCPWIDwxMVEc0tjYiKWlJfmHoC/13UJ9SUYX7OzsiIRcSuWbAD+0Y/PdsJ+dnUVTU5O0emBgoBSHn0ycnJzg4OBAPp9DqLa2VncOa7GvS/y77g79uLy8jImJCbERu4tnOSZjYmJkXnOk6nfhR8T/K/4WYADNd7IEXVeXcQAAAABJRU5ErkJggg==) no-repeat;
+    width: 21px;
+    height: 21px;
+    border: 0;
+    margin-left: 5px;
+    outline: none;
+
+    &.tg-territory__loading-button {
+        background: top url(data:image/gif;base64,R0lGODlhEAAQAPIAAP///wAAAMLCwkJCQgAAAGJiYoKCgpKSkiH/C05FVFNDQVBFMi4wAwEAAAAh/hpDcmVhdGVkIHdpdGggYWpheGxvYWQuaW5mbwAh+QQJCgAAACwAAAAAEAAQAAADMwi63P4wyklrE2MIOggZnAdOmGYJRbExwroUmcG2LmDEwnHQLVsYOd2mBzkYDAdKa+dIAAAh+QQJCgAAACwAAAAAEAAQAAADNAi63P5OjCEgG4QMu7DmikRxQlFUYDEZIGBMRVsaqHwctXXf7WEYB4Ag1xjihkMZsiUkKhIAIfkECQoAAAAsAAAAABAAEAAAAzYIujIjK8pByJDMlFYvBoVjHA70GU7xSUJhmKtwHPAKzLO9HMaoKwJZ7Rf8AYPDDzKpZBqfvwQAIfkECQoAAAAsAAAAABAAEAAAAzMIumIlK8oyhpHsnFZfhYumCYUhDAQxRIdhHBGqRoKw0R8DYlJd8z0fMDgsGo/IpHI5TAAAIfkECQoAAAAsAAAAABAAEAAAAzIIunInK0rnZBTwGPNMgQwmdsNgXGJUlIWEuR5oWUIpz8pAEAMe6TwfwyYsGo/IpFKSAAAh+QQJCgAAACwAAAAAEAAQAAADMwi6IMKQORfjdOe82p4wGccc4CEuQradylesojEMBgsUc2G7sDX3lQGBMLAJibufbSlKAAAh+QQJCgAAACwAAAAAEAAQAAADMgi63P7wCRHZnFVdmgHu2nFwlWCI3WGc3TSWhUFGxTAUkGCbtgENBMJAEJsxgMLWzpEAACH5BAkKAAAALAAAAAAQABAAAAMyCLrc/jDKSatlQtScKdceCAjDII7HcQ4EMTCpyrCuUBjCYRgHVtqlAiB1YhiCnlsRkAAAOwAAAAAAAAAAAA==) no-repeat;
+    }
+}
+.tg-territory__popup {
+    background: #f0f0f0;
+    border: 1px solid #e0dfdf;
+    padding: 5px;
+    -moz-user-select: none;
+    -webkit-user-select: none;
+}
+.tg-territory__popup-header {
+    padding: 0 5px;
+    .clearfix();
+}
+
+.tg-territory__popup-body {
+
+}
+
+.tg-territory__btn {
+    border: 0;
+    background-color: transparent;
+    color: #369;
+    padding: 0 5px;
+
+    &:hover {
+        text-decoration: underline;
+    }
+}
+
+.tg-territory__clusters {
+    .clearfix();
+}
+.tg-territory__cluster {
+    padding: 5px;
+    float: left;
+    width: 50%;
+
+    &:nth-of-type(even) {
+        float: right;
+    }
+}
+.tg-territory__cluster-inner {
+    background-color: #ffffff;
+    padding: 10px;
+}
+.tg-territory__cluster-header {
+    .clearfix();
+    cursor: pointer;
+}
+
+.tg-territory__cluster-body {
+    margin-top: 10px;
+}
+
+.tg-territory__cluster-countries,
+.tg-territory__cluster-regions {
+    .content-columns(2, 10px);
+    margin: 0;
+    padding: 0;
+}
+.tg-territory__cluster-country,
+.tg-territory__cluster-region {
+    line-height: 25px;
+    border: 1px dashed transparent;
+    margin: 0 0 5px 0;
+    cursor: pointer;
+    position: relative;
+    padding: 0 24px 0 4px;
+
+    &:after {
+        position: absolute;
+        top: 0;
+        right: 10px;
+        opacity: .2;
+    }
+
+    &:hover {
+        border-color: #ccc;
+
+        &:after {
+            content: '+';
+
+        }
+    }
+
+    &.m-active {
+        border: 1px solid #dddada;
+        background-color: #e9e8e8;
+
+        &:hover {
+            &:after {
+                color: #30befa;
+                opacity: 1;
+            }
+        }
+
+        &:after {
+            content: 'x';
+        }
+    }
+}
+.tg-territory__cluster-region-title {
+    border-top: 1px solid #bcbcbc;
+    margin: 0 6px 0;
+    padding: 10px 0;
+    color: #bcbcbc;
+}
+.tg-territory__caret {
+    color: #02b4fe;
+    width: 20px;
+    height: 20px;
+    float: left;
+    line-height: 20px;
+    text-align: center;
+}
+.tg-territory__countries-counter {
+    font-size: 11px;
+}
+.tg-territory__tag {
+    &.tg-territory__tag-type-worldwide {
+        background-color: #bfbfbf;
+    }
+    &.tg-territory__tag-type-cluster {
+        background-color: #cfcfcf;
+    }
+    &.tg-territory__tag-type-region {
+        background-color: #dfdfdf;
+    }
+    &.tg-territory__tag-type-country {
+        background-color: #efefef;
+    }
+
+    .tg-typeahead__tag-remove {
+        color: #777;
+    }
 }

@@ -9,6 +9,8 @@
         "angular-ui-router": "~0.2.15",
         "highlightjs": "~8.6.0",
         "angular-highlightjs": "~0.4.3",
-        "highlightjs-line-numbers.js": "~1.0.1"
+        "highlightjs-line-numbers.js": "~1.0.1",
+        "angular-mocks": "~1.4.4",
+        "jasmine-jquery": "~2.1.0"
     }
 }
