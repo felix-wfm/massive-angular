@@ -157,6 +157,16 @@
             }
         }
 
+        function isApplyInProgress(scope) {
+            var phase = scope.$root.$$phase;
+
+            return (phase == '$apply' || phase == '$digest');
+        }
+
+        function isPromise(ref) {
+            return (ref && isFunction(ref.then));
+        }
+
         return {
             isObject: isObject,
             isArray: isArray,
@@ -168,7 +178,9 @@
             empty: empty,
             has: has,
             naturalJoin: naturalJoin,
-            sort: sort
+            sort: sort,
+            isApplyInProgress: isApplyInProgress,
+            isPromise: isPromise
         };
     }
 })();
