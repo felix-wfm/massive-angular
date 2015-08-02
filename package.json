@@ -9,9 +9,14 @@
         "gulp-csso": "*",
         "gulp-uglify": "*",
         "gulp-connect": "*",
+        "gulp-protractor": "*",
         "del": "*",
+        "jasmine-reporters": "*",
         "karma": "*",
         "karma-jasmine": "*",
-        "karma-phantomjs-launcher": "*"
+        "karma-coverage": "*",
+        "karma-junit-reporter": "*",
+        "karma-phantomjs-launcher": "*",
+        "karma-requirejs": "*"
     }
 }

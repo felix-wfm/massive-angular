@@ -5,7 +5,8 @@ var gulp = require('gulp'),
     uglify = require('gulp-uglify'),
     connect = require('gulp-connect'),
     del = require('del'),
-    karma = require('karma');
+    karma = require('karma'),
+    protractor = require("gulp-protractor");
 
 var port = '3000',
     env = process.env.NODE_ENV || 'dev',
@@ -33,14 +34,16 @@ var paths = {
             './app/assets/js/**/*.js',				// included js files
             '!./app/assets/js/**/_*.js'				// excluded js files
         ],
-        tests: [
-            './tests/**/*.js',					    // included test files
-            '!./tests/**/_*.js'					    // excluded test files
-        ],
-        data: [
-            './tests/data/**/*.json',				// included data files
-            '!./tests/data/**/_*.json'              // excluded data files
-        ]
+        unit: {
+            scripts: [
+                './tests/unit/**/*.js',				// included test files
+                '!./tests/unit/**/_*.js'		    // excluded test files
+            ],
+            data: [
+                './tests/unit/data/**/*.json',		// included data files
+                '!./tests/unit/data/**/_*.json'     // excluded data files
+            ]
+        }
     },
     vendor: {
         styles: [
@@ -94,7 +97,7 @@ gulp.task('app.scripts', function () {
 });
 
 gulp.task('app.data', function () {
-    return gulp.src(paths.app.data)
+    return gulp.src(paths.app.unit.data)
         .pipe(gulp.dest(paths.dev + '/api'))
         .pipe(connect.reload());
 });
@@ -138,7 +141,7 @@ gulp.task('dev.watch', function () {
     gulp.watch(paths.app.styles, ['app.styles']);
     gulp.watch(paths.app.images, ['app.images']);
     gulp.watch(paths.app.scripts, ['app.scripts']);
-    gulp.watch(paths.app.data, ['app.data']);
+    gulp.watch(paths.app.unit.data, ['app.data']);
 });
 
 gulp.task('dev', ['dev.build'], function () {
@@ -190,7 +193,7 @@ gulp.task('release.build', ['release.clean'], function () {
         .pipe(uglify())
         .pipe(gulp.dest(paths.release + '/js'));
 
-    gulp.src(paths.app.data)
+    gulp.src(paths.app.unit.data)
         .pipe(gulp.dest(paths.release + '/api'));
 });
 
@@ -198,20 +201,32 @@ gulp.task('release', function () {
     gulp.start('release.build');
 });
 
-gulp.task('test', function () {
+gulp.task('test:unit', function () {
     var server = new karma.Server({
-        configFile: __dirname + '/tests/karma.conf.js',
+        configFile: __dirname + '/tests/unit/karma.conf.js',
         singleRun: true
     });
 
     server.start();
 });
 
-gulp.task('test.run', function () {
+gulp.task('test:unit run', function () {
     var server = new karma.Server({
-        configFile: __dirname + '/tests/karma.conf.js',
+        configFile: __dirname + '/tests/unit/karma.conf.js',
         singleRun: false
     });
 
     server.start();
 });
+
+gulp.task('test:e2e', ['test.e2e webDriver:update'], function (cb) {
+    gulp.src(['./tests/e2e/spec/**/*.js'])
+        .pipe(protractor.protractor({
+            configFile: __dirname + '/tests/e2e/protractor.conf.js',
+            args: ['--baseUrl', 'http://localhost:3000']
+        })).on('error', function (e) {
+            console.log(e)
+        }).on('end', cb);
+});
+
+gulp.task('test.e2e webDriver:update', protractor.webdriver_update);

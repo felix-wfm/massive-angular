@@ -4,7 +4,7 @@
     var $injector,
         $httpBackend;
 
-    jasmine.getJSONFixtures().fixturesPath = 'base/tests/data';
+    jasmine.getJSONFixtures().fixturesPath = 'base/tests/unit/data';
 
     global.specHelper = {
         getServiceReference: function (serviceName) {

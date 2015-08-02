@@ -4,7 +4,7 @@ module.exports = function (config) {
         frameworks: ['jasmine'],
 
         // base path, that will be used to resolve files and exclude
-        basePath: '../',
+        basePath: '../../',
 
         // list of files / patterns to load in the browser
         files: [
@@ -18,10 +18,10 @@ module.exports = function (config) {
             'bower_components/angular-highlightjs/angular-highlightjs.js',
             'app/config/config.*.js',
             'app/assets/js/**/*.js',
-            'tests/helpers/*.js',
-            'tests/setup/**/*.js',
-            'tests/spec/**/*.js',
-            {pattern: 'tests/data/**/*.json', watched: true, served: true, included: false}
+            'tests/unit/helpers/*.js',
+            'tests/unit/setup/**/*.js',
+            'tests/unit/spec/**/*.js',
+            {pattern: 'tests/unit/data/**/*.json', watched: true, served: true, included: false}
         ],
 
         // list of files / patterns to exclude
