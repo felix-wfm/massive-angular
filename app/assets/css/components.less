@@ -347,8 +347,9 @@
     }
 }
 /* --------------------------------------- */
-/* - TG DROP DOWN                          */
+/* - TG DROPDOWN                           */
 /* --------------------------------------- */
+/* DROPDOWN CONTROL */
 .tg-dropdown-wrap {
     width: 100%;
 
@@ -378,6 +379,12 @@
         &.disabled {
             cursor: not-allowed !important;
             background: @grayLighter;
+        }
+
+        .tg-dropdown__loader {
+            position: absolute;
+            top: 2px;
+            right: 25px;
         }
 
         > button {
@@ -421,43 +428,42 @@
     a.btn {
         width: 100%;
     }
+}
+.tg-dropdown-menu {
+    position: relative;
+    font-size: 13px;
 
-    .tg-dropdown-menu {
-        position: relative;
-        font-size: 13px;
+    .dropdown-menu {
+        display: block;
+        border: 1px solid #ccc;
+        max-height: 222px;
+        min-width: 100%;
+        overflow-y: auto;
 
-        .dropdown-menu {
-            display: block;
-            border: 1px solid #ccc;
-            max-height: 222px;
-            min-width: 100%;
-            overflow-y: auto;
-
-            li > a {
-                padding-left: 10px;
-            }
+        li > a {
+            padding-left: 10px;
         }
+    }
 
+    .tg-dropdown-menu-search {
+        display: none;
+        position: absolute;
+        width: 100%;
+        height: 27px;
+        top: 2px;
+        left: 0px;
+        margin: 0;
+        z-index: 1000;
+        box-sizing: border-box;
+        border: 1px solid #ccc !important;
+    }
+
+    &.tg-dropdown-menu-has-search {
         .tg-dropdown-menu-search {
-            display: none;
-            position: absolute;
-            width: 100%;
-            height: 27px;
-            top: 2px;
-            left: 0px;
-            margin: 0;
-            z-index: 1000;
-            box-sizing: border-box;
-            border: 1px solid #ccc !important;
+            display: block;
         }
-
-        &.tg-dropdown-menu-has-search {
-            .tg-dropdown-menu-search {
-                display: block;
-            }
-            .dropdown-menu {
-                top: 26px;
-            }
+        .dropdown-menu {
+            top: 26px;
         }
     }
 }
@@ -467,6 +473,9 @@ div.ng-invalid-required[tg-dropdown] {
         > button {
             border-color: @errorBorder;
         }
+        .tg-dropdown-caret {
+            border-color: #999 #999 #999 @errorBorder;
+        }
 
         &:focus {
             > button {
@@ -475,9 +484,33 @@ div.ng-invalid-required[tg-dropdown] {
         }
     }
 }
-/* --------------------------------------- */
-/* - TG DROP DOWN STAGE                    */
-/* --------------------------------------- */
+.tg-dropdown__exclamation-triangle {
+    float: right;
+    margin: 3px 0 0 0;
+    font-size: 12px;
+
+    &.m-warning {
+        color: #e8be04;
+    }
+
+    &.m-error {
+        color: #c33;
+    }
+}
+.tg-dropdown {
+    &.m-warning {
+        .tg-dropdown-wrap > div.tg-dropdown-button > button {
+            &.tg-dropdown-label {
+                border-color: #e8be04;
+            }
+            &.tg-dropdown-caret {
+                border-left-color: #e8be04;
+            }
+
+        }
+    }
+}
+/* DROPDOWN STAGE CONTROL */
 .tg-dropdown-stage-menu {
     display: block;
     border: 1px solid #ccc;

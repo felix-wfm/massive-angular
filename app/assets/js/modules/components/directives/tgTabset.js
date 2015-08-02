@@ -3,285 +3,35 @@
 
     angular.module('tg.components')
         .run(['$templateCache', function ($templateCache) {
-            'use strict';
-
             $templateCache.put('tg-tabset.tmpl.html',
-                '<div class="tabbable" data-ng-class="tgTabsetWrapClass">' +
-                '   <ul class="nav nav-tabs">' +
-                '       <li data-ng-repeat="$tab in $tabs"' +
-                '           data-ng-show="$tab.visible"' +
-                '           data-ng-class="{ \'active\': isActiveTab($tab), \'disabled\': $tab.disabled }">' +
-                '           <a href="" data-ng-click="setActiveTab($tab);">' +
-                '               <span data-tg-tabset-render-template="$tab.template.header">{{ $tab.title || \'&nbsp;\' }}</span>' +
-                '           </a>' +
-                '       </li>' +
-                '   </ul>' +
-                '   <div class="tab-content" data-ng-repeat="$tab in $tabs">' +
-                '       <div class="tab-pane"' +
-                '            data-ng-if="$tab.initiated"' +
-                '            data-ng-show="$tab.visible"' +
-                '            data-tg-tabset-render-template="$tab.template.content"' +
-                '            data-ng-class="{ \'active\': isActiveTab($tab) }"></div>' +
-                '   </div>' +
-                '</div>'
+                '<div class="tabbable" \
+                      ng-class="tgTabsetWrapClass">\
+                   <ul class="nav nav-tabs">\
+                       <li ng-repeat="$tab in $tabs" \
+                           ng-show="$tab.visible" \
+                           ng-class="{ \'active\': isActiveTab($tab), \'disabled\': $tab.disabled }">\
+                           <a href="" ng-click="setActiveTab($tab);">\
+                               <span tg-tabset-render-template="$tab.template.header">{{ $tab.title || \'&nbsp;\' }}</span>\
+                           </a>\
+                       </li>\
+                   </ul>\
+                   <div class="tab-content" ng-repeat="$tab in $tabs">\
+                       <div class="tab-pane" \
+                             data-ng-show="$tab.visible" \
+                             data-ng-class="{ \'active\': isActiveTab($tab) }">\
+                             <div class="loader" \
+                                  data-ng-show="$tab.loader"></div>\
+                             <div data-ng-show="!$tab.loader && !$tab.initiated">Seems like some dependencies load failed! Click <a href="" ng-click="$tab.reload();">Refresh</a></div>\
+                             <div data-ng-show="!$tab.loader" \
+                                  data-ng-if="$tab.initiated" \
+                                  data-tg-tabset-render-template="$tab.template.content"></div>\
+                        </div>\
+                   </div>\
+                </div>'
             );
         }])
-        .directive('tgTabset', ['$tgComponents', '$http', '$compile', '$parse', '$templateCache', '$q',
-            function ($tgComponents, $http, $compile, $parse, $templateCache, $q) {
-                'use strict';
-
-                return {
-                    restrict: 'A',
-                    scope: {
-                        tgTabset: '=?',
-                        tgTabsetId: '@',
-                        tgTabsetTemplateUrl: '@',
-                        tgTabsetWrapClass: '@',
-                        tgTabsetActiveTab: '@',
-                        tgTabsetContext: '@'
-                    },
-                    compile: function () {
-                        return function postLink(scope, element) {
-                            var parentScope = scope.$parent,
-                                ctrl = scope.tgTabset;
-
-                            scope.$tabs = ctrl.$tabs;
-
-                            scope.setActiveTab = function (tab, ignoreError) {
-                                ctrl.setActiveTab(tab, ignoreError);
-                            };
-
-                            scope.isActiveTab = function (tab) {
-                                return (tab && ctrl.getActiveTab() === tab);
-                            };
-
-                            var tplUrl = $parse(scope.tgTabsetTemplateUrl)(parentScope) || 'tg-tabset.tmpl.html';
-
-                            $http.get(tplUrl, {cache: $templateCache})
-                                .success(function (tplContent) {
-                                    var compiled = $compile(tplContent.trim())(scope);
-
-                                    element.prepend(compiled);
-                                });
-                        };
-                    },
-                    controller: ['$scope', '$element', '$attrs',
-                        function ($scope, $element, $attrs) {
-                            this.$type = 'tgTabset';
-                            this.$name = !$scope.tgTabsetId ? (this.$type + '_' + $scope.$id) : $scope.tgTabsetId;
-                            this.$scope = $scope;
-                            this.$element = $element;
-                            this.$attrs = $attrs;
-                            this.$supportEvents = true;
-
-                            var _this = this,
-                                tabs = this.$tabs = [],
-                                activeTab = null,
-                                activeTabName = $scope.tgTabsetActiveTab;
-
-                            $scope.tgTabset = _this;
-
-                            this.context = $parse($scope.tgTabsetContext)($scope.$parent) || {};
-
-                            this.getActiveTab = function () {
-                                return activeTab;
-                            };
-
-                            this.setActiveTab = function (tab, ignoreError) {
-                                var defer = $q.defer();
-
-                                if (tab && tabs.indexOf(tab) !== -1) {
-                                    if (tab !== activeTab && !tab.disabled) {
-                                        tab.refreshContext(false);
-
-                                        var fSelect = function () {
-                                            var evt = {
-                                                tab: tab,
-                                                activeTab: activeTab
-                                            };
-
-                                            _this.trigger('$onTabSelecting', evt)
-                                                .then(function () {
-                                                    tab.initiated = true;
-
-                                                    if (tab.autoRefresh) {
-                                                        tab.refresh();
-                                                    }
-
-                                                    if (activeTab) {
-                                                        if (activeTab.destroyOnDeselect) {
-                                                            activeTab.initiated = false;
-                                                        }
-
-                                                        evt = {
-                                                            tab: activeTab
-                                                        };
-
-                                                        _this.trigger('$onTabDeselected', evt);
-                                                    }
-
-                                                    activeTab = tab;
-
-                                                    evt = {
-                                                        tab: activeTab
-                                                    };
-
-                                                    _this.trigger('$onTabSelected', evt);
-
-                                                    defer.resolve();
-                                                })
-                                                .catch(function () {
-                                                    defer.reject();
-                                                });
-                                        };
-
-                                        if (activeTab) {
-                                            var evt = {
-                                                tab: activeTab
-                                            };
-
-                                            _this.trigger('$onTabDeselecting', evt)
-                                                .then(function () {
-                                                    fSelect();
-                                                })
-                                                .catch(function () {
-                                                    defer.reject();
-                                                });
-                                        } else {
-                                            fSelect();
-                                        }
-                                    } else {
-                                        defer.reject();
-                                    }
-                                } else if (!!ignoreError) {
-                                    defer.reject();
-
-                                    throw new Error('Invalid tab.');
-                                }
-
-                                return defer.promise;
-                            };
-
-                            this.addTab = function (tab) {
-                                if (!checkName(tab.name)) {
-                                    throw new Error('Tab with name `' + tab.name + '` was already added to tabset.');
-                                }
-
-                                var evt = {
-                                    tab: tab
-                                };
-
-                                _this.trigger('$onTabAdding', evt)
-                                    .then(function () {
-                                        tabs.push(tab);
-
-                                        _this.trigger('$onTabAdded', evt);
-
-                                        if (tab.name === activeTabName) {
-                                            _this.setActiveTab(tab);
-                                        }
-                                    });
-                            };
-
-                            this.removeTab = function (tab, forced) {
-                                if (checkName(tab.name)) {
-                                    throw new Error('Tab with name `' + tab.name + '` doesn\'t exist in tabset.');
-                                }
-
-                                function fRemove() {
-                                    var idx = tabs.indexOf(tab);
-
-                                    if (idx > -1) {
-                                        tabs.splice(idx, 1);
-
-                                        if (!forced) {
-                                            _this.trigger('$onTabRemoved', evt);
-
-                                            if (tab === _this.getActiveTab()) {
-                                                idx--;
-
-                                                if (idx < 0) {
-                                                    idx = 0;
-                                                }
-
-                                                _this.setActiveTab(_this.getTabByIndex(idx, true), true);
-                                            }
-                                        }
-                                    }
-                                }
-
-                                if (!forced) {
-                                    var evt = {
-                                        tab: tab
-                                    };
-
-                                    _this.trigger('$onTabRemoving', evt)
-                                        .then(function () {
-                                            fRemove();
-                                        });
-                                } else {
-                                    fRemove();
-                                }
-                            };
-
-                            this.getTabByIndex = function (index, ignoreError) {
-                                var len = tabs.length;
-
-                                if (index >= 0 || index < len) {
-                                    return tabs[index];
-                                }
-
-                                if (!!ignoreError) {
-                                    throw new Error('Invalid tab index.');
-                                }
-
-                                return null;
-                            };
-
-                            this.getTabByName = function (name, ignoreError) {
-                                for (var index in tabs) {
-                                    if (tabs[index].name === name) {
-                                        return tabs[index];
-                                    }
-                                }
-
-                                if (!!ignoreError) {
-                                    throw new Error('Invalid tab name.');
-                                }
-
-                                return null;
-                            };
-
-                            this.setDefaultTab = function (name) {
-                                activeTabName = name;
-                            };
-
-                            this.displayNext = function (startIndex, endIndex) {
-                                tabs.forEach(function (tab, index) {
-                                    tab.visible = (startIndex <= index && index <= endIndex);
-                                });
-                            };
-
-                            $tgComponents.$addInstance(this);
-
-                            $scope.$on('$destroy', function () {
-                                $tgComponents.$removeInstance(_this);
-                            });
-
-                            function checkName(name) {
-                                for (var idx in tabs) {
-                                    if (tabs[idx].name === name) {
-                                        return false;
-                                    }
-                                }
-
-                                return true;
-                            }
-                        }
-                    ]
-                };
-            }
-        ])
+        .directive('tgTabset', tgTabset)
+        .directive('tgTab', tgTab)
         .directive('tgTabsetRenderTemplate', ['$http', '$compile', '$parse', '$templateCache',
             function ($http, $compile, $parse, $templateCache) {
                 return {
@@ -292,7 +42,7 @@
                             var tpl = $parse(attrs.tgTabsetRenderTemplate)(scope);
 
                             if (tpl && angular.isObject(tpl)) {
-                                if (tpl.hasOwnProperty('templateUrl')) {
+                                if (tpl.templateUrl) {
                                     element.html(null);
 
                                     if (!tpl.renderScope) {
@@ -322,147 +72,441 @@
                     }
                 };
             }
-        ])
-        .directive('tgTab', ['$parse',
-            function ($parse) {
-                'use strict';
+        ]);
+
+    tgTabset.$inject = ['$tgComponents', '$http', '$compile', '$parse', '$templateCache', '$q'];
+
+    function tgTabset($tgComponents, $http, $compile, $parse, $templateCache, $q) {
+        return {
+            restrict: 'A',
+            require: ['tgTabset'],
+            scope: {
+                tgTabset: '=?',
+                tgTabsetId: '@',
+                tgTabsetTemplateUrl: '@',
+                tgTabsetWrapClass: '@',
+                tgTabsetActiveTab: '@',
+                tgTabsetContext: '@'
+            },
+            compile: function () {
+                function preLink(scope, element, attrs, controllers) {
+                    var selfCtrl = controllers[0];
+
+                    scope.$tabs = selfCtrl.$tabs;
+
+                    scope.setActiveTab = function (tab, ignoreError) {
+                        selfCtrl.setActiveTab(tab, ignoreError);
+                    };
+
+                    scope.isActiveTab = function (tab) {
+                        return (tab && selfCtrl.getActiveTab() === tab);
+                    };
+                }
+
+                function postLink(scope, element, attrs) {
+                    var parentScope = scope.$parent,
+                        tplUrl = $parse(scope.tgTabsetTemplateUrl)(parentScope) || 'tg-tabset.tmpl.html';
+
+                    $http.get(tplUrl, {cache: $templateCache})
+                        .success(function (tplContent) {
+                            var compiled = $compile(tplContent.trim())(scope);
+
+                            element.prepend(compiled);
+                        });
+                }
 
                 return {
-                    restrict: 'A',
-                    require: '^tgTabset',
-                    transclude: true,
-                    scope: {
-                        tgTab: '@',
-                        tgTabTitle: '@',
-                        tgTabContext: '@',
-                        tgTabInitiated: '@',
-                        tgTabDisabled: '@',
-                        tgTabAutoRefresh: '@',
-                        tgTabDestroyOnDeselect: '@',
-                        tgTabIsolated: '@',
-                        tgTabTemplateUrl: '@'
-                    },
-                    compile: function () {
-                        function preLink(scope, element, attrs, tgTabsetCtrl, $transcludeFn) {
-                            var attachedToElm = null;
+                    pre: preLink,
+                    post: postLink
+                };
+            },
+            controller: ['$scope', '$element', '$attrs',
+                function ($scope, $element, $attrs) {
+                    this.$type = 'tgTabset';
+                    this.$name = !$scope.tgTabsetId ? (this.$type + '_' + $scope.$id) : $scope.tgTabsetId;
+                    this.$scope = $scope;
+                    this.$element = $element;
+                    this.$attrs = $attrs;
+                    this.$supportEvents = true;
 
-                            var tab = scope.$tab;
+                    var self = this,
+                        tabs = this.$tabs = [],
+                        activeTab = null,
+                        activeTabName = $scope.tgTabsetActiveTab;
 
-                            tab.template.content.$attachTo = function (elm, scp) {
-                                var evt = {
-                                    tab: tab
-                                };
+                    this.context = $parse($scope.tgTabsetContext)($scope.$parent) || {};
 
-                                tgTabsetCtrl.trigger('$onTabAttaching', evt)
-                                    .then(function () {
-                                        attachedToElm = elm;
+                    this.getActiveTab = function () {
+                        return activeTab;
+                    };
 
-                                        var newScope = scp;
+                    this.setActiveTab = function (tab, ignoreError) {
+                        var defer = $q.defer();
 
-                                        if (scope.tgTabIsolated !== 'true') {
-                                            newScope = scope.$parent.$new();
-                                            newScope.$tab = tab;
-                                        } else {
-                                            newScope.$external = scope.$parent;
-                                        }
+                        if (tab && tabs.indexOf(tab) !== -1) {
+                            if ((tab !== activeTab || !tab.initiated) && !tab.disabled) {
+                                tab.refreshContext(false);
 
-                                        newScope.$tabset = tgTabsetCtrl;
-                                        tab.$scope = newScope;
-
-                                        if (tab.template.header) {
-                                            var headerScope = tab.template.header.renderScope;
-
-                                            if (headerScope) {
-                                                headerScope.$tab = tab;
-                                            }
-                                        }
-
-                                        $transcludeFn(newScope, function (contents) {
-                                            elm.append(contents);
-                                        });
-
-                                        tgTabsetCtrl.trigger('$onTabAttached', evt);
-                                    });
-                            };
-
-                            tab.refresh = function () {
-                                if (tab.initiated && attachedToElm) {
+                                var fSelect = function () {
                                     var evt = {
-                                        tab: tab
+                                        tab: tab,
+                                        activeTab: activeTab
                                     };
 
-                                    tgTabsetCtrl.trigger('$onTabRefreshing', evt)
+                                    self.trigger('$onTabSelecting', evt)
                                         .then(function () {
-                                            attachedToElm.html(null);
-                                            tab.$attachTo(attachedToElm);
+                                            tab.loader = true;
 
-                                            tgTabsetCtrl.trigger('$onTabRefreshed', evt);
+                                            resolveDependencies(tab)
+                                                .then(function () {
+                                                    tab.initiated = true;
+                                                })
+                                                .finally(function () {
+                                                    tab.loader = false;
+                                                });
+
+                                            if (activeTab) {
+                                                if (!activeTab.keepOnDeselect) {
+                                                    // enforce the $destroy cycle
+                                                    if (activeTab.$scope) {
+                                                        activeTab.$scope.$destroy();
+                                                    }
+
+                                                    activeTab.initiated = false;
+                                                }
+
+                                                evt = {
+                                                    tab: activeTab
+                                                };
+
+                                                self.trigger('$onTabDeselected', evt);
+                                            }
+
+                                            activeTab = tab;
+
+                                            evt = {
+                                                tab: activeTab
+                                            };
+
+                                            self.trigger('$onTabSelected', evt);
+
+                                            defer.resolve();
+                                        })
+                                        .catch(function () {
+                                            defer.reject();
                                         });
+                                };
+
+                                if (activeTab) {
+                                    var evt = {
+                                        tab: activeTab
+                                    };
+
+                                    self.trigger('$onTabDeselecting', evt)
+                                        .then(function () {
+                                            fSelect();
+                                        })
+                                        .catch(function () {
+                                            defer.reject();
+                                        });
+                                } else {
+                                    fSelect();
                                 }
-                            };
+                            } else {
+                                defer.reject();
+                            }
+                        } else if (!!ignoreError) {
+                            defer.reject();
 
-                            tgTabsetCtrl.addTab(tab);
-
-                            attrs.$observe('tgTabTitle', function (value) {
-                                tab.title = value;
-                            });
-
-                            // remove tab block definition from markup
-                            element.remove();
-
-                            scope.$on('$destroy', function () {
-                                tgTabsetCtrl.removeTab(tab, true);
-                            });
+                            throw new Error('Invalid tab.');
                         }
 
-                        return {
-                            pre: preLink,
-                            post: null
+                        return defer.promise;
+                    };
+
+                    this.addTab = function (tab) {
+                        if (!checkName(tab.name)) {
+                            throw new Error('Tab with name `' + tab.name + '` was already added to tabset.');
+                        }
+
+                        var evt = {
+                            tab: tab
                         };
-                    },
-                    controller: ['$scope', '$element', '$attrs',
-                        function ($scope, $element, $attrs) {
-                            var parsedContext = $parse($scope.tgTabContext);
 
-                            var tab = $scope.$tab = {
-                                name: $scope.tgTab,
-                                title: $scope.tgTabTitle,
-                                template: {
-                                    header: ($scope.tgTabTemplateUrl) ? {
-                                        templateUrl: $scope.tgTabTemplateUrl,
-                                        renderScope: $scope.$parent.$new()
-                                    } : null,
-                                    content: {
-                                        renderScope: null
-                                    }
-                                },
-                                context: null,
-                                initiated: ($scope.tgTabInitiated === 'true'),
-                                disabled: ($scope.tgTabDisabled === 'true'),
-                                visible: true,
-                                autoRefresh: ($scope.tgTabAutoRefresh === 'true'),
-                                destroyOnDeselect: ($scope.tgTabDestroyOnDeselect === 'true'),
-                                refreshContext: function (reInit) {
-                                    var context = parsedContext($scope.$parent) || {};
+                        self.trigger('$onTabAdding', evt)
+                            .then(function () {
+                                tabs.push(tab);
 
-                                    if (reInit === false) {
-                                        context = angular.extend(context, this.context);
-                                    }
+                                self.trigger('$onTabAdded', evt);
 
-                                    this.context = context
-                                },
-                                show: function () {
-                                    this.visible = true;
-                                },
-                                hide: function () {
-                                    this.visible = false;
+                                if (tab.name === activeTabName) {
+                                    self.setActiveTab(tab);
                                 }
+                            });
+                    };
+
+                    this.removeTab = function (tab, forced) {
+                        if (checkName(tab.name)) {
+                            throw new Error('Tab with name `' + tab.name + '` doesn\'t exist in tabset.');
+                        }
+
+                        function fRemove() {
+                            var idx = tabs.indexOf(tab);
+
+                            if (idx > -1) {
+                                tabs.splice(idx, 1);
+
+                                if (!forced) {
+                                    self.trigger('$onTabRemoved', evt);
+
+                                    if (tab === self.getActiveTab()) {
+                                        idx--;
+
+                                        if (idx < 0) {
+                                            idx = 0;
+                                        }
+
+                                        self.setActiveTab(self.getTabByIndex(idx, true), true);
+                                    }
+                                }
+                            }
+                        }
+
+                        if (!forced) {
+                            var evt = {
+                                tab: tab
                             };
 
-                            tab.refreshContext();
+                            self.trigger('$onTabRemoving', evt)
+                                .then(function () {
+                                    fRemove();
+                                });
+                        } else {
+                            fRemove();
                         }
-                    ]
+                    };
+
+                    this.getTabByIndex = function (index, ignoreError) {
+                        var len = tabs.length;
+
+                        if (index >= 0 || index < len) {
+                            return tabs[index];
+                        }
+
+                        if (!!ignoreError) {
+                            throw new Error('Invalid tab index.');
+                        }
+
+                        return null;
+                    };
+
+                    this.getTabByName = function (name, ignoreError) {
+                        for (var index in tabs) {
+                            if (tabs[index].name === name) {
+                                return tabs[index];
+                            }
+                        }
+
+                        if (!!ignoreError) {
+                            throw new Error('Invalid tab name.');
+                        }
+
+                        return null;
+                    };
+
+                    this.setDefaultTab = function (name) {
+                        activeTabName = name;
+                    };
+
+                    this.displayNext = function (startIndex, endIndex) {
+                        tabs.forEach(function (tab, index) {
+                            tab.visible = (startIndex <= index && index <= endIndex);
+                        });
+                    };
+
+                    $tgComponents.$addInstance(self);
+
+                    $scope.$on('$destroy', function () {
+                        $tgComponents.$removeInstance(self);
+                    });
+
+                    function checkName(name) {
+                        for (var idx in tabs) {
+                            if (tabs[idx].name === name) {
+                                return false;
+                            }
+                        }
+
+                        return true;
+                    }
+
+                    function resolveDependencies(tab) {
+                        var defer = $q.defer();
+
+                        if (tab.resolve) {
+                            var promises = [],
+                                resolve = tab.resolve($scope);
+
+                            angular.forEach(resolve, function (resolve, key) {
+                                var rs = $injector.invoke(resolve);
+                                promises.push(rs);
+                            });
+
+                            $q.all(promises)
+                                .then(defer.resolve, defer.reject);
+                        } else {
+                            defer.resolve();
+                        }
+
+                        return defer.promise;
+                    }
+                }
+            ]
+        };
+    }
+
+    tgTab.$inject = ['$parse', '$interpolate'];
+
+    function tgTab($parse, $interpolate) {
+        return {
+            restrict: 'A',
+            require: ['tgTab', '^tgTabset'],
+            transclude: true,
+            scope: {},
+            compile: function (tElement, tAttrs) {
+                function preLink(scope, element, attrs, controllers, $transcludeFn) {
+                    var selfCtrl = controllers[0],
+                        tgTabsetCtrl = controllers[1],
+                        attachedToElm;
+
+                    selfCtrl.template.content.$attachTo = function (elm, scp) {
+                        var evt = {
+                            tab: selfCtrl
+                        };
+
+                        tgTabsetCtrl.trigger('$onTabAttaching', evt)
+                            .then(function () {
+                                attachedToElm = elm;
+
+                                var newScope = scp;
+
+                                if (attrs.tgTabIsolated !== 'true') {
+                                    newScope = scope.$parent.$new();
+                                    newScope.$tab = selfCtrl;
+                                }
+
+                                newScope.$external = scope.$parent;
+                                newScope.$tabset = tgTabsetCtrl;
+                                selfCtrl.$scope = newScope;
+
+                                if (selfCtrl.template.header) {
+                                    var headerScope = selfCtrl.template.header.renderScope;
+
+                                    if (headerScope) {
+                                        headerScope.$tab = selfCtrl;
+                                    }
+                                }
+
+                                $transcludeFn(newScope, function (contents) {
+                                    elm.append(contents);
+                                });
+
+                                tgTabsetCtrl.trigger('$onTabAttached', evt);
+                            });
+                    };
+
+                    selfCtrl.refresh = function () {
+                        if (selfCtrl.initiated && attachedToElm) {
+                            var evt = {
+                                tab: selfCtrl
+                            };
+
+                            tgTabsetCtrl.trigger('$onTabRefreshing', evt)
+                                .then(function () {
+                                    selfCtrl.$scope.$destroy();
+                                    attachedToElm.html(null);
+                                    selfCtrl.template.content.$attachTo(attachedToElm);
+
+                                    tgTabsetCtrl.trigger('$onTabRefreshed', evt);
+                                });
+                        }
+                    };
+
+                    selfCtrl.reload = function () {
+                        tgTabsetCtrl.setActiveTab(selfCtrl);
+                    };
+
+                    selfCtrl.refreshContext();
+
+                    tgTabsetCtrl.addTab(selfCtrl);
+
+                    attrs.$observe('tgTabTitle', function (value) {
+                        selfCtrl.title = value;
+                    });
+
+                    scope.$on('$destroy', function () {
+                        tgTabsetCtrl.removeTab(selfCtrl, true);
+                    });
+                }
+
+                function postLink(scope, element, attrs) {
+                    // remove tab block definition from markup
+                    element.remove();
+                }
+
+                return {
+                    pre: preLink,
+                    post: postLink
                 };
-            }
-        ]);
+            },
+            controller: ['$scope', '$element', '$attrs', function ($scope, $element, $attrs) {
+                var parsedContext = $parse($attrs.tgTabContext);
+
+                this.name = $interpolate($attrs.tgTab || ('tgTab_' + $scope.$id))($scope.$parent);
+                this.title = $attrs.tgTabTitle || undefined;
+
+                this.template = {
+                    header: {
+                        templateUrl: $attrs.tgTabTemplateUrl,
+                        renderScope: $scope.$parent.$new()
+                    },
+                    content: {
+                        renderScope: null
+                    }
+                };
+
+                this.$scope = null;
+                this.context = null;
+                this.resolve = null;
+
+                if ($attrs.tgTabResolve) {
+                    this.resolve = $parse($attrs.tgTabResolve);
+                }
+
+                this.loader = false;
+                this.visible = true;
+                this.initiated = ($attrs.tgTabInitiated === 'true');
+                this.disabled = ($attrs.tgTabDisabled === 'true');
+                this.keepOnDeselect = ($attrs.tgTabKeepOnDeselect === 'true');
+
+                this.show = function () {
+                    this.visible = true;
+                };
+
+                this.hide = function () {
+                    this.visible = false;
+                };
+
+                this.refreshContext = function (reInit) {
+                    var context = parsedContext($scope.$parent) || {};
+
+                    if (reInit === false) {
+                        context = angular.extend(context, this.context);
+                    }
+
+                    this.context = context
+                };
+            }]
+        };
+    }
 })();
