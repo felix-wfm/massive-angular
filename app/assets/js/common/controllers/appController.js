@@ -7,6 +7,10 @@
     AppController.$inject = ['$scope'];
 
     function AppController($scope) {
+        $scope.toJson = function (obj) {
+            return angular.toJson(obj, true);
+        };
+
         (function init() {
 
         })();

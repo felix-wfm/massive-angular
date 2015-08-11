@@ -1,12 +1,16 @@
 {
-	"name": "Vendors",
-	"version": "0.0.1",
-	"dependencies": {
-		"jquery": "~2.1.1",
-		"bootstrap": "~3.3.1",
-		"font-awesome": "~4.2.0",
-		"angular": "~1.2.27",
-		"angular-ui-router": "~0.2.13",
-		"angular-highlightjs": "~0.3.2"
-	}
+    "name": "Vendors",
+    "version": "0.1.0",
+    "dependencies": {
+        "jquery": "~2.1.4",
+        "bootstrap": "~3.3.5",
+        "font-awesome": "~4.4.0",
+        "angular": "~1.4.4",
+        "angular-ui-router": "~0.2.15",
+        "highlightjs": "~8.6.0",
+        "angular-highlightjs": "~0.4.3",
+        "highlightjs-line-numbers.js": "~1.0.1",
+        "angular-mocks": "~1.4.4",
+        "jasmine-jquery": "~2.1.0"
+    }
 }

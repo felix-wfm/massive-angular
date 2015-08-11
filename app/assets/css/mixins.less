@@ -22,3 +22,12 @@
     -moz-box-shadow: @shadow;
     box-shadow: @shadow;
 }
+
+.content-columns(@columnCount, @columnGap) {
+    -webkit-column-count: @columnCount;
+    -moz-column-count: @columnCount;
+    column-count: @columnCount;
+    -webkit-column-gap: @columnGap;
+    -moz-column-gap: @columnGap;
+    column-gap: @columnGap;
+}

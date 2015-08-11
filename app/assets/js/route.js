@@ -38,6 +38,11 @@ angular.module('app')
                     url: '/tgTabset',
                     templateUrl: './view/components/tgTabset.html',
                     controller: 'TabsetController'
+                })
+                .state('components.tgTerritory', {
+                    url: '/tgTerritory',
+                    templateUrl: './view/components/tgTerritory.html',
+                    controller: 'TerritoryController'
                 });
         }
     ]);

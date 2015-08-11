@@ -5,575 +5,580 @@
 (function () {
     'use strict';
 
-    function templateTransclusion(require, templateSetter) {
-        return {
-            restrict: 'A',
-            require: require,
-            transclude: true,
-            scope: false,
-            compile: function () {
-                function preLink(scope, element, attrs, ctrl, $transcludeFn) {
-                    if (templateSetter && ctrl && ctrl.hasOwnProperty(templateSetter)) {
-                        ctrl[templateSetter]({
-                            $attachTo: function (elm, scp) {
-                                $transcludeFn(scp, function (contents) {
-                                    elm.append(contents);
-                                });
-                            }
-                        });
-                    }
-                }
-
-                function postLink(scope, element, attrs) {
-                    element.remove();
-                }
-
-                return {
-                    pre: preLink,
-                    post: postLink
-                };
-            }
-        };
-    }
-
     angular.module('tg.components')
         .run(['$templateCache', function ($templateCache) {
             $templateCache.put('tg-dropdown.tpl.html',
-                '<div class="btn-group tg-dropdown-wrap" data-ng-class="tgDropdownWrapClass">' +
+                '<div class="btn-group tg-dropdown-wrap" ng-class="tgDropdownWrapClass">' +
 
-                '   <div class="tg-dropdown-button" data-ng-class="{ \'disabled\': tgDropdownDisabled }"' +
-                '        data-ng-click="toggleOpenState($event);">' +
+                '   <div class="tg-dropdown-button"' +
+                '        ng-class="{ \'disabled\': tgDropdownDisabled }"' +
+                '        ng-click="toggleOpenState($event);">' +
                 '       <button class="tg-dropdown-label overflow">' +
-                '           <span style="font-style: italic" class="muted" data-ng-if="!$selectedItem" data-ng-bind-html="tgDropdownPlaceholder"></span>' +
-                '           <span data-tg-dropdown-render-template="$templates.selectedItem">No Template</span>' +
+                '           <span style="font-style: italic" class="muted"' +
+                '                 ng-if="!$selectedItem"' +
+                '                 ng-bind-html="tgDropdownPlaceholder"></span>' +
+                '           <span tg-component-render-template="$templates.main.selectedItem">No Template</span>' +
                 '       </button>' +
-                '       <button class="tg-dropdown-caret fa" data-ng-class="$stateHolder.opened ? \'fa-caret-up\' : \'fa-caret-down\'"></button>' +
+                '       <div class="input-loader tg-dropdown__loader" ng-show="$stateHolder.loader"></div>' +
+                '       <button class="tg-dropdown-caret fa" ng-class="$stateHolder.popup.opened ? \'fa-caret-up\' : \'fa-caret-down\'"></button>' +
                 '   </div>' +
 
-                '   <div data-tg-dropdown-render-template="$templates.popup">' +
+                '   <div tg-component-render-template="$templates.popup.wrapper">' +
                 '</div>'
             );
 
             $templateCache.put('tg-dropdown-popup.tpl.html',
-                '<div class="tg-dropdown-menu" data-ng-class="{ \'tg-dropdown-menu-has-search\': !!tgDropdownSearch }" data-ng-show="$stateHolder.opened">' +
+                '<div class="tg-dropdown-menu"' +
+                '     ng-class="{ \'tg-dropdown-menu-has-search\': !!tgDropdownSearch }"' +
+                '     ng-style="$templates.popup.wrapper.style"' +
+                '     ng-show="$stateHolder.popup.opened">' +
                 '   <input type="text" class="tg-dropdown-menu-search" placeholder="{{ tgDropdownSearchPlaceholder }}" ' +
-                '       data-ng-model="$stateHolder.filter" ' +
-                '       data-ng-change="applyFilter();">' +
-                '   <ul class="dropdown-menu" data-tg-when-scrolled="onPopupScrolled($event);">' +
-                '       <li data-ng-if="$templates.itemHeader">' +
-                '           <div data-tg-dropdown-render-template="$templates.itemHeader">' +
-                '               No Template' +
-                '           </div>' +
-                '       </li>' +
-                '       <li data-ng-repeat="$item in $dataHolder.filteredItems | limitTo:$stateHolder.limit">' +
-                '           <a href="" data-ng-click="selectItem($item);" data-tg-dropdown-render-template="$templates.item">' +
+                '       ng-model="$stateHolder.filter" ' +
+                '       ng-change="applyFilter();">' +
+                '   <ul class="dropdown-menu" tg-when-scrolled="onPopupScrolled($event);">' +
+                '       <li tg-component-render-template="$templates.popup.header"></li>' +
+                '       <li ng-repeat="$item in $dataHolder.filteredItems | limitTo:$stateHolder.limit">' +
+                '           <a href="" ng-click="selectItem($item);" tg-component-render-template="$templates.popup.item">' +
                 '               No Template' +
                 '           </a>' +
                 '       </li>' +
-                '       <li data-ng-if="$stateHolder.filter && $dataHolder.filteredItems == 0">' +
-                '           <a href="" class="overflow">' +
-                '               No match for "{{ $stateHolder.filter }}"' +
-                '           </a>' +
-                '       </li>' +
+                '       <li tg-component-render-template="$templates.popup.footer"></li>' +
                 '   </ul>' +
                 '</div>'
             );
 
+            $templateCache.put('tg-dropdown-popup-footer.tpl.html',
+                '<span ng-if="$stateHolder.filter && $dataHolder.filteredItems == 0">' +
+                '   <a href="" class="overflow">' +
+                '       No match for "{{ $stateHolder.filter }}"' +
+                '   </a>' +
+                '</span>');
+
             $templateCache.put('tg-dropdown-stage-popup.tpl.html',
-                '<div class="tg-dropdown-menu" data-ng-show="$stateHolder.opened">' +
+                '<div class="tg-dropdown-menu"' +
+                '     ng-style="$templates.popup.wrapper.style"' +
+                '     ng-show="$stateHolder.popup.opened">' +
                 '   <ul class="tg-dropdown-stage-menu">' +
-                '       <li class="tg-dropdown-stage-menu__item-wrap" data-ng-if="$level > 0">' +
-                '           <button class="fa fa-caret-left tg-dropdown-stage-menu__back" data-ng-click="goBack($item)"></button>' +
-                '           <div class="tg-dropdown-stage-menu__item" data-ng-click="goBack($item);">Back</div>' +
+                '       <li class="tg-dropdown-stage-menu__item-wrap" ng-if="$level > 0">' +
+                '           <button class="fa fa-caret-left tg-dropdown-stage-menu__back" ng-click="goBack($item)"></button>' +
+                '           <div class="tg-dropdown-stage-menu__item" ng-click="goBack($item);">Back</div>' +
                 '       </li>' +
-                '       <li class="tg-dropdown-stage-menu__item-wrap" data-ng-repeat="$item in $dataHolder.filteredItems">' +
+                '       <li class="tg-dropdown-stage-menu__item-wrap" ng-repeat="$item in $dataHolder.filteredItems">' +
                 '           <div class="fa fa-check tg-dropdown-stage-menu__check" style="visibility: hidden;"></div>' +
-                '           <button class="fa fa-caret-right tg-dropdown-stage-menu__forward" data-ng-click="goForward($item)" data-ng-if="hasChilds($item)"></button>' +
-                '           <div class="tg-dropdown-stage-menu__item" data-ng-click="goForward($item);" data-tg-dropdown-render-template="$templates.item" data-ng-class="{ \'m-selectable\': !hasChilds($item) }">No Template</div>' +
+                '           <button class="fa fa-caret-right tg-dropdown-stage-menu__forward"' +
+                '                   ng-click="goForward($item);"' +
+                '                   ng-if="hasChilds($item)"></button>' +
+                '           <div class="tg-dropdown-stage-menu__item"' +
+                '                ng-click="goForward($item);"' +
+                '                ng-class="{ \'m-selectable\': !hasChilds($item) }"' +
+                '                tg-component-render-template="$templates.popup.item">No Template</div>' +
                 '       </li>' +
                 '   </ul>' +
                 '</div>'
             );
         }])
-        .directive('tgDropdown', ['$tgComponents', '$http', '$compile', '$parse', '$templateCache', '$filter', '$timeout', '$document',
-            function ($tgComponents, $http, $compile, $parse, $templateCache, $filter, $timeout, $document) {
-                return {
-                    restrict: 'A',
-                    require: ['tgDropdown', '?ngModel'],
-                    scope: {
-                        tgDropdown: '@',
-                        tgDropdownPlaceholder: '@',
-                        tgDropdownId: '@',
-                        tgDropdownWrapClass: '@',
-                        tgDropdownTemplateUrl: '@',
-                        tgDropdownPopupTemplateUrl: '@',
-                        tgDropdownSearch: '=',
-                        tgDropdownSearchPlaceholder: '@',
-                        tgDropdownFilterBy: '@',
-                        tgDropdownOrderBy: '=',
-                        tgDropdownLimitStep: '@',
-                        tgDropdownSelected: '@',
-                        tgDropdownDisabled: '=',
-                        tgDropdownAddEmpty: '@',
-                        tgDropdownEmptyText: '@'
-                    },
-                    compile: function (el, attrs) {
-                        var TYPEAHEAD_REGEXP = /^\s*(.*?)(?:\s+as\s+(.*?))?\s+for\s+(?:([\$\w][\$\w\d]*))\s+in\s+(.*)$/,
-                            match = attrs.tgDropdown.match(TYPEAHEAD_REGEXP);
+        .directive('tgDropdown', tgDropdown)
+        .directive('tgDropdownStage', tgDropdownStage)
+        .directive('tgDropdownSelectedItemTemplate', tgDropdownSelectedItemTemplate)
+        .directive('tgDropdownPopupHeaderTemplate', tgDropdownPopupHeaderTemplate)
+        .directive('tgDropdownItemTemplate', tgDropdownItemTemplate)
+        .directive('tgDropdownPopupFooterTemplate', tgDropdownPopupFooterTemplate);
 
-                        if (!match) {
-                            throw new Error('Expected typeahead specification in form of \'_modelValue_ (as _label_)? for _item_ in _collection_\' but got \'' + attrs.tgDropdown + '\'.');
+    /*
+     * DROP-DOWN
+     */
+    tgDropdown.$inject = ['$tgComponents', '$injector', '$compile', '$parse', '$q', '$filter', '$timeout', '$interval', '$document'];
+
+    function tgDropdown($tgComponents, $injector, $compile, $parse, $q, $filter, $timeout, $interval, $document) {
+        return {
+            restrict: 'A',
+            require: ['tgDropdown', '?ngModel'],
+            scope: {
+                tgDropdown: '@',
+                tgDropdownPlaceholder: '@',
+                tgDropdownId: '@',
+                tgDropdownWrapClass: '@',
+                tgDropdownPopupAppendTo: '@',
+                tgDropdownPopupAppendToBody: '@',
+                tgDropdownPopupStrictWidth: '@',
+                tgDropdownSearch: '=',
+                tgDropdownSearchPlaceholder: '@',
+                tgDropdownFilterBy: '@',
+                tgDropdownOrderBy: '=',
+                tgDropdownLimitStep: '@',
+                tgDropdownSelected: '@',
+                tgDropdownDisabled: '=',
+                tgDropdownAddEmpty: '@',
+                tgDropdownEmptyText: '@',
+                tgDropdownSourceOnDemand: '@',
+                tgDropdownComparator: '&'
+            },
+            compile: function (el, attrs) {
+                var DROPDOWN_REGEXP = /^\s*(.*?)(?:\s+as\s+(.*?))?\s+for\s+(?:([\$\w][\$\w\d]*))\s+in\s+(.*)$/;
+
+                function sourceExprParse(expression) {
+                    var match = expression.match(DROPDOWN_REGEXP);
+
+                    if (!match) {
+                        throw new Error('Expected dropdown specification in form of \'_modelValue_ (as _label_)? for _item_ in _collection_\' but got \'' + attrs.tgDropdown + '\'.');
+                    }
+
+                    return {
+                        expression: expression,
+                        itemName: match[3],
+                        sourceMapper: $parse(match[4]),
+                        viewMapper: $parse(match[2] || match[1]),
+                        modelMapper: $parse(match[1])
+                    };
+                }
+
+                function preLink(scope, element, attrs, controllers) {
+                    var selfCtrl = controllers[0],
+                        ngModelCtrl = controllers[1],
+                        parentScope = scope.$parent,
+                        mapper = sourceExprParse(attrs.tgDropdown),
+                        source = null,
+                        locals = {},
+                        modelValue = null,
+                        emptyItem = null,
+                        filterBy = (scope.tgDropdownFilterBy) ? $parse(scope.tgDropdownFilterBy) : null,
+                        limitStep = parseInt(scope.tgDropdownLimitStep) || 9999,
+                        onSelected = (scope.tgDropdownSelected) ? $parse(scope.tgDropdownSelected) : angular.noop,
+                        sourceOnDemand = (scope.tgDropdownSourceOnDemand === 'true'),
+                        comparatorFn = function (objA, objB) {
+                            return angular.equals(objA, objB);
+                        },
+                        RenderTemplateModel = $injector.get('tgComponentRenderTemplateModel');
+
+                    var comparator = scope.tgDropdownComparator();
+
+                    if (angular.isFunction(comparator)) {
+                        comparatorFn = comparator;
+                    }
+
+                    if (scope.tgDropdownAddEmpty === 'true') {
+                        emptyItem = createItem(scope.tgDropdownEmptyText || null, null);
+                    }
+
+                    scope.$external = parentScope;
+                    scope.$templates = {
+                        main: {
+                            wrapper: new RenderTemplateModel('main.wrapper', attrs.tgDropdownTemplateUrl || 'tg-dropdown.tpl.html'),
+                            selectedItem: new RenderTemplateModel('main.selectedItem', attrs.tgDropdownSelectedItemTemplateUrl)
+                        },
+                        popup: {
+                            wrapper: new RenderTemplateModel('popup.wrapper', attrs.tgDropdownPopupTemplateUrl || 'tg-dropdown-popup.tpl.html'),
+                            header: new RenderTemplateModel('popup.header', attrs.tgDropdownPopupHeaderTemplateUrl),
+                            item: new RenderTemplateModel('popup.item', attrs.tgDropdownItemTemplateUrl),
+                            footer: new RenderTemplateModel('popup.footer', attrs.tgDropdownPopupFooterTemplateUrl || 'tg-dropdown-popup-footer.tpl.html')
+                        }
+                    };
+                    scope.$stateHolder = {
+                        popup: {
+                            opened: false,
+                            updateIntervalID: undefined
+                        },
+                        limit: limitStep,
+                        filter: '',
+                        loader: false,
+                        loadDefer: undefined
+                    };
+                    scope.$dataHolder = {
+                        filteredItems: []
+                    };
+                    scope.$selectedItem = emptyItem;
+
+                    if (scope.tgDropdownPopupAppendToBody === 'true') {
+                        scope.$templates.popup.wrapper.appendTo = 'body';
+                    } else if (angular.isString(scope.tgDropdownPopupAppendTo)) {
+                        scope.$templates.popup.wrapper.appendTo = scope.tgDropdownPopupAppendTo;
+                    }
+
+                    if (scope.tgDropdownPopupStrictWidth !== 'false') {
+                        scope.$templates.popup.wrapper.strictWidth = true;
+                    }
+
+                    scope.$findElementInTemplate = function (tpl, selector) {
+                        if (tpl && tpl.element && selector) {
+                            return tpl.element.find(selector);
+                        }
+                    };
+
+                    scope.openPopup = function () {
+                        var defer = scope.$stateHolder.loadDefer,
+                            popupState = scope.$stateHolder.popup;
+
+                        if (sourceOnDemand && !scope.getSource()) {
+                            defer = scope.refreshSource();
                         }
 
-                        var mapper = {
-                            itemName: match[3],
-                            source: $parse(match[4]),
-                            viewMapper: $parse(match[2] || match[1]),
-                            modelMapper: $parse(match[1])
-                        };
-
-                        function createItem(viewValue, modelValue) {
-                            var item = {};
-
-                            mapper.modelMapper.assign(item, modelValue);
-                            mapper.viewMapper.assign(item, viewValue);
-
-                            return item[mapper.itemName];
+                        if (!defer) {
+                            defer = $q.when(true);
                         }
 
-                        function preLink(scope, element, attrs, controllers) {
-                            var selfCtrl = controllers[0],
-                                ngModelCtrl = controllers[1],
-                                parentScope = scope.$parent,
-                                source = null,
-                                locals = {},
-                                modelValue = null,
-                                emptyItem = null,
-                                filterBy = (scope.tgDropdownFilterBy) ? $parse(scope.tgDropdownFilterBy) : null,
-                                limitStep = parseInt(scope.tgDropdownLimitStep) || 9999,
-                                onSelected = (scope.tgDropdownSelected) ? $parse(scope.tgDropdownSelected) : angular.noop;
+                        scope.$stateHolder.loader = true;
+                        popupState.opened = undefined;
 
-                            if (scope.tgDropdownAddEmpty === 'true') {
-                                emptyItem = createItem(scope.tgDropdownEmptyText || null, null);
-                            }
+                        defer
+                            .then(function () {
+                                if (popupState.opened !== false) {
+                                    scope.$stateHolder.filter = '';
+                                    scope.$dataHolder.filteredItems = scope.getSource();
 
-                            scope.$external = parentScope;
-                            scope.$templates = {
-                                main: scope.tgDropdownTemplateUrl || 'tg-dropdown.tpl.html',
-                                popup: scope.tgDropdownPopupTemplateUrl || 'tg-dropdown-popup.tpl.html',
-                                selectedItem: null,
-                                itemHeader: null,
-                                item: null
-                            };
-                            scope.$stateHolder = {
-                                opened: false,
-                                limit: limitStep,
-                                filter: ''
-                            };
-                            scope.$dataHolder = {
-                                filteredItems: []
-                            };
-                            scope.$selectedItem = emptyItem;
+                                    if (!scope.$dataHolder.filteredItems ||
+                                        scope.$dataHolder.filteredItems.length === 0) {
+                                        return;
+                                    }
 
-                            scope.openPopup = function () {
-                                scope.$stateHolder.filter = '';
-                                scope.$dataHolder.filteredItems = scope.getSource();
+                                    popupState.opened = true;
+                                    scope.$stateHolder.limit = limitStep;
 
-                                if (!scope.$dataHolder.filteredItems ||
-                                    scope.$dataHolder.filteredItems.length === 0) {
-                                    return;
+                                    scope.updatePopupElement(scope.$templates.popup.wrapper);
+
+                                    if (scope.$templates.popup.wrapper.appendTo && !popupState.updateIntervalID) {
+                                        popupState.updateIntervalID = $interval(function () {
+                                            if (popupState.opened) {
+                                                scope.updatePopupElement(scope.$templates.popup.wrapper);
+                                            }
+                                        }, 50);
+                                    }
                                 }
+                            })
+                            .finally(function () {
+                                scope.$stateHolder.loader = false;
+                            });
+                    };
 
-                                scope.$stateHolder.opened = true;
-                                scope.$stateHolder.limit = limitStep;
+                    scope.closePopup = function () {
+                        var popupState = scope.$stateHolder.popup;
 
-                                $timeout(function () {
-                                    scope.updateMenu();
-                                });
-                            };
+                        popupState.opened = false;
+                        scope.$stateHolder.limit = limitStep;
 
-                            scope.closePopup = function () {
-                                scope.$stateHolder.opened = false;
-                                scope.$stateHolder.limit = limitStep;
-                            };
+                        if (popupState.updateIntervalID) {
+                            $interval.cancel(popupState.updateIntervalID);
+                            popupState.updateIntervalID = undefined;
+                        }
+                    };
 
-                            scope.onPopupScrolled = function () {
-                                var limit = scope.$stateHolder.limit + limitStep;
+                    scope.onPopupScrolled = function () {
+                        var limit = scope.$stateHolder.limit + limitStep;
 
-                                if (limit > scope.$dataHolder.filteredItems.length) {
-                                    limit = scope.$dataHolder.filteredItems.length;
-                                }
+                        if (limit > scope.$dataHolder.filteredItems.length) {
+                            limit = scope.$dataHolder.filteredItems.length;
+                        }
 
-                                if (limit < limitStep) {
-                                    limit = limitStep;
-                                }
+                        if (limit < limitStep) {
+                            limit = limitStep;
+                        }
 
-                                scope.$stateHolder.limit = limit;
-                            };
+                        scope.$stateHolder.limit = limit;
+                    };
 
-                            scope.toggleOpenState = function ($event) {
-                                if (!scope.tgDropdownDisabled) {
-                                    (!scope.$stateHolder.opened) ? scope.openPopup() : scope.closePopup();
-                                }
+                    scope.toggleOpenState = function ($event) {
+                        if (!scope.tgDropdownDisabled) {
+                            (!scope.$stateHolder.popup.opened) ? scope.openPopup() : scope.closePopup();
+                        }
 
-                                $event.preventDefault();
-                            };
+                        $event.preventDefault();
+                    };
 
-                            scope.getSource = function () {
-                                return source;
-                            };
+                    scope.getSource = function () {
+                        return source;
+                    };
 
-                            scope.applyFilter = function () {
-                                scope.$stateHolder.limit = limitStep;
-                                scope.$dataHolder.filteredItems = $filter('filter')(source, filterBy({
-                                    $filter: scope.$stateHolder.filter
-                                }));
-                            };
+                    scope.applyFilter = function () {
+                        scope.$stateHolder.limit = limitStep;
+                        scope.$dataHolder.filteredItems = $filter('filter')(source, filterBy({
+                            $filter: scope.$stateHolder.filter
+                        }));
+                    };
 
-                            scope.refreshSource = function () {
-                                source = mapper.source(parentScope);
+                    scope.refreshSource = function () {
+                        var result = mapper.sourceMapper(parentScope),
+                            defer = $q.when(result || false);
 
-                                if (source) {
-                                    if (source && source.length > 0 && scope.tgDropdownOrderBy) {
-                                        source = $filter('orderBy')(source, scope.tgDropdownOrderBy);
+                        scope.$stateHolder.loadDefer = defer;
+
+                        return defer
+                            .then(function (data) {
+                                if (data) {
+                                    if (data.length > 0 && scope.tgDropdownOrderBy) {
+                                        data = $filter('orderBy')(data, scope.tgDropdownOrderBy);
                                     }
 
                                     if (emptyItem) {
                                         var hasEmptyItem = false;
 
-                                        for (var key in source) {
-                                            if (getItemModelValue(source[key]) === null) {
+                                        for (var key in data) {
+                                            if (getItemModelValue(data[key]) === null) {
                                                 hasEmptyItem = true;
                                                 break;
                                             }
                                         }
 
                                         if (!hasEmptyItem) {
-                                            source.unshift(angular.copy(emptyItem));
+                                            data.unshift(angular.copy(emptyItem));
                                         }
                                     }
-                                }
-                            };
 
-                            scope.selectItem = function (item) {
-                                var evt = scope.selectItemEventPrepare(item);
-
-                                selfCtrl.trigger('onItemSelecting', evt)
-                                    .then(function () {
-                                        scope.closePopup();
-
-                                        if (item) {
-                                            scope.hasSelectedAnyItem = true;
-                                        }
-
-                                        scope.$selectedItem = item;
-
-                                        if (ngModelCtrl) {
-                                            modelValue = getItemModelValue(item);
-                                            ngModelCtrl.$setViewValue(modelValue);
-                                        }
-
-                                        selfCtrl.trigger('onItemSelected', evt);
-                                        onSelected(parentScope, evt);
-                                    });
-                            };
-
-                            scope.selectItemEventPrepare = function (item) {
-                                var evt = {
-                                    $item: item
-                                };
-
-                                return evt;
-                            };
-
-                            scope.updateMenu = function () {
-                                var ddm = element.find('.dropdown-menu');
-
-                                if (ddm.length > 0) {
-                                    var menu = element.find('.tg-dropdown-menu');
-                                    menu.css('width', ddm.get(0).offsetWidth);
-                                    ddm.scrollTop(0);
-
-                                    if (!!scope.tgDropdownSearch) {
-                                        menu.find('input.tg-dropdown-menu-search').focus();
-                                    }
-                                }
-                            };
-
-                            scope.updateSelectedItemFromModel = function (value, getItemModelValueFn) {
-                                if (value === undefined && emptyItem !== null) {
-                                    value = null;
-                                }
-
-                                scope.$selectedItem = null;
-
-                                if (value !== undefined) {
-                                    if (getItemModelValueFn(scope.$selectedItem) !== value) {
-                                        for (var key in source) {
-                                            if (angular.equals(getItemModelValueFn(source[key]), value)) {
-                                                scope.$selectedItem = source[key];
-                                                break;
-                                            }
-                                        }
-                                    }
-                                }
-
-                                return (scope.$selectedItem !== null) ? value : null;
-                            };
-
-                            if (ngModelCtrl) {
-                                ngModelCtrl.$formatters.push(function (value) {
-                                    return scope.updateSelectedItemFromModel(value, getItemModelValue);
-                                });
-                            }
-
-                            scope.refreshSource();
-
-                            function getItemModelValue(item) {
-                                locals[mapper.itemName] = item;
-                                modelValue = mapper.modelMapper(parentScope, locals);
-
-                                // reset locals
-                                locals[mapper.itemName] = null;
-
-                                return modelValue;
-                            }
-                        }
-
-                        function postLink(scope, element, attrs, ngModelCtrl) {
-                            $http.get(scope.$templates.main, {cache: $templateCache})
-                                .success(function (tplContent) {
-                                    element.append($compile(tplContent.trim())(scope));
-                                });
-
-                            var clickedOnElement = false,
-                                onDocumentClick = function () {
-                                    if (!clickedOnElement) {
-                                        $timeout(function () {
-                                            scope.closePopup();
-                                        });
-                                    }
-                                    clickedOnElement = false;
-                                };
-
-                            $document.on('click', onDocumentClick);
-
-                            element.on('click', function () {
-                                clickedOnElement = true;
-                            });
-
-                            scope.$on('$destroy', function () {
-                                $document.off('click', onDocumentClick);
-                            });
-                        }
-
-                        return {
-                            pre: preLink,
-                            post: postLink
-                        };
-                    },
-                    controller: ['$scope', '$element', '$attrs', function ($scope, $element, $attrs) {
-                        var self = this;
-
-                        self.$type = 'tgDropdown';
-                        self.$name = !$scope.tgDropdownId ? (self.$type + '_' + $scope.$id) : $scope.tgDropdownId;
-                        self.$scope = $scope;
-                        self.$element = $element;
-                        self.$attrs = $attrs;
-                        self.$supportEvents = true;
-
-                        this.$setSelectedItemTemplate = function (tpl) {
-                            $scope.$templates.selectedItem = tpl;
-                        };
-
-                        this.$setItemHeaderTemplate = function (tpl) {
-                            $scope.$templates.itemHeader = tpl;
-                        };
-
-                        this.$setItemTemplate = function (tpl) {
-                            $scope.$templates.item = tpl;
-                        };
-
-                        this.refreshSource = function () {
-                            $scope.refreshSource();
-                        };
-
-                        this.selectItem = function (item) {
-                            $scope.selectItem(item);
-                        };
-
-                        this.$overrideFn = function (fnName, fn) {
-                            var baseFn = $scope[fnName] || angular.noop;
-
-                            $scope[fnName] = function overridenFunction() {
-                                var tmpBase = this.$baseFn,
-                                    ret;
-
-                                this.$baseFn = baseFn;
-                                ret = fn.apply(this, arguments);
-                                this.$baseFn = tmpBase;
-
-                                return ret;
-                            };
-                        };
-
-                        $tgComponents.$addInstance(self);
-
-                        $scope.$on('$destroy', function () {
-                            $tgComponents.$removeInstance(self);
-                        });
-                    }]
-                };
-            }
-        ])
-        .directive('tgDropdownRenderTemplate', ['$http', '$compile', '$parse', '$templateCache',
-            function ($http, $compile, $parse, $templateCache) {
-                return {
-                    restrict: 'A',
-                    scope: false,
-                    compile: function () {
-                        function postLink(scope, element, attrs) {
-                            var tpl = $parse(attrs.tgDropdownRenderTemplate)(scope);
-
-                            if (angular.isString(tpl)) {
-                                element.html(null);
-
-                                $http.get(tpl, {cache: $templateCache})
-                                    .success(function (tplContent) {
-                                        element.append($compile(tplContent.trim())(scope));
-                                    });
-                            } else if (angular.isObject(tpl)) {
-                                element.html(null);
-
-                                tpl.$attachTo(element, scope);
-                            }
-                        }
-
-                        return {
-                            pre: null,
-                            post: postLink
-                        };
-                    }
-                };
-            }
-        ])
-        .directive('tgDropdownSelectedItemTemplate', [function () {
-            return templateTransclusion('^?tgDropdown', '$setSelectedItemTemplate');
-        }])
-        .directive('tgDropdownItemHeaderTemplate', [function () {
-            return templateTransclusion('^?tgDropdown', '$setItemHeaderTemplate');
-        }])
-        .directive('tgDropdownItemTemplate', [function () {
-            return templateTransclusion('^?tgDropdown', '$setItemTemplate');
-        }])
-        .directive('tgDropdownStage', [function () {
-            return {
-                restrict: 'A',
-                require: 'tgDropdown',
-                scope: false,
-                compile: function (el, attrs) {
-                    function preLink(scope, element, attrs, tgDropdownCtrl) {
-                        scope = tgDropdownCtrl.$scope;
-
-                        scope.$templates.popup = scope.tgDropdownPopupTemplateUrl || 'tg-dropdown-stage-popup.tpl.html';
-                        scope.$paths = [];
-                        scope.$level = 0;
-
-                        tgDropdownCtrl.$overrideFn('openPopup', function () {
-                            this.$baseFn();
-
-                            if (scope.$selectedItem) {
-                                var paths = scope.collectPaths(scope.$selectedItem),
-                                    idx = paths.length - 1;
-
-                                if (idx >= 0) {
-                                    scope.$level = idx + 1;
-                                    scope.selectItem(paths[idx]);
+                                    source = data;
                                 } else {
-                                    scope.goRoot();
+                                    source = [];
                                 }
-                            } else {
-                                scope.$level = 0;
-                            }
-                        });
 
-                        tgDropdownCtrl.$overrideFn('selectItem', function (item) {
-                            if (scope.hasChilds(item)) {
-                                scope.$dataHolder.filteredItems = item.childs;
-                            } else {
-                                scope.$paths = scope.collectPaths(item);
-                                this.$baseFn(item);
-                            }
-                        });
+                                return source;
+                            })
+                            .catch(function () {
+                                source = [];
+                            })
+                            .finally(function () {
+                                scope.$stateHolder.loadDefer = undefined;
+                            });
+                    };
 
-                        tgDropdownCtrl.$overrideFn('selectItemEventPrepare', function (item) {
-                            var evt = this.$baseFn(item);
+                    scope.selectItem = function (item) {
+                        var evt = scope.selectItemEventPrepare(item);
 
-                            evt.$paths = scope.$paths;
+                        selfCtrl.trigger('onItemSelecting', evt)
+                            .then(function () {
+                                scope.closePopup();
 
-                            return evt;
-                        });
+                                if (item) {
+                                    scope.hasSelectedAnyItem = true;
+                                }
 
-                        tgDropdownCtrl.$overrideFn('updateSelectedItemFromModel', function (value, getItemModelValueFn) {
-                            if (value !== undefined) {
-                                if (getItemModelValueFn(scope.$selectedItem) !== value) {
-                                    var itm;
+                                scope.$selectedItem = item;
 
-                                    var findItem = function (src) {
-                                        if (Array.isArray(src)) {
-                                            for (var i = 0, n = src.length; i < n; i++) {
-                                                itm = src[i];
+                                if (ngModelCtrl) {
+                                    modelValue = getItemModelValue(item);
+                                    ngModelCtrl.$setViewValue(modelValue);
+                                }
 
-                                                if (getItemModelValueFn(itm) === value) {
-                                                    return itm;
-                                                }
+                                selfCtrl.trigger('onItemSelected', evt);
+                                onSelected(parentScope, evt);
+                            });
+                    };
 
-                                                if (scope.hasChilds(itm)) {
-                                                    itm = findItem(itm.childs);
+                    scope.selectItemEventPrepare = function (item) {
+                        var evt = {
+                            $item: item
+                        };
 
-                                                    if (itm) {
-                                                        return itm;
-                                                    }
-                                                }
-                                            }
+                        return evt;
+                    };
+
+                    scope.updatePopupElement = function (popup) {
+                        var style = popup.style || {};
+
+                        if (popup.appendTo) {
+                            var offset = element.offset(),
+                                height = element.outerHeight(true);
+
+                            style.position = 'absolute';
+                            style.top = offset.top + height + 1;
+                            style.left = offset.left;
+                        }
+
+                        if (popup.strictWidth) {
+                            style.width = element.innerWidth();
+                            style.boxSizing = 'border-box';
+                        }
+
+                        popup.style = style;
+                    };
+
+                    scope.updateSelectedItemFromModel = function (value, getItemModelValueFn) {
+                        if (value === undefined && emptyItem !== null) {
+                            value = null;
+                        }
+
+                        scope.$selectedItem = null;
+
+                        if (value !== undefined) {
+                            if (getItemModelValueFn(scope.$selectedItem) !== value) {
+                                if (source) {
+                                    for (var key in source) {
+                                        if (comparatorFn(getItemModelValueFn(source[key]), value)) {
+                                            scope.$selectedItem = source[key];
+                                            break;
                                         }
-                                    };
-
-                                    scope.$selectedItem = findItem(scope.getSource()) || null;
-
-                                    if (scope.$selectedItem) {
-                                        scope.$paths = scope.collectPaths(scope.$selectedItem);
                                     }
+                                } else if (sourceOnDemand) {
+                                    scope.$selectedItem = createItem(value);
                                 }
                             }
+                        }
 
-                            return (scope.$selectedItem !== null) ? value : null;
+                        return (scope.$selectedItem !== null) ? value : null;
+                    };
+
+                    if (!sourceOnDemand) {
+                        scope.refreshSource()
+                            .finally(function () {
+                                if (ngModelCtrl) {
+                                    ngModelCtrl.$formatters.push(function (value) {
+                                        return scope.updateSelectedItemFromModel(value, getItemModelValue);
+                                    });
+                                    scope.updateSelectedItemFromModel(ngModelCtrl.$modelValue, getItemModelValue);
+                                    //ngModelCtrl.$setViewValue(modelValue);
+                                }
+                            });
+                    } else {
+                        if (ngModelCtrl) {
+                            ngModelCtrl.$formatters.push(function (value) {
+                                return scope.updateSelectedItemFromModel(value, getItemModelValue);
+                            });
+                        }
+                    }
+
+                    function createItem(viewValue, modelValue) {
+                        var item = {};
+
+                        mapper.modelMapper.assign(item, modelValue);
+                        mapper.viewMapper.assign(item, viewValue);
+
+                        return item[mapper.itemName];
+                    }
+
+                    function getItemModelValue(item) {
+                        locals[mapper.itemName] = item;
+                        modelValue = mapper.modelMapper(parentScope, locals);
+
+                        // reset locals
+                        locals[mapper.itemName] = null;
+
+                        return modelValue;
+                    }
+                }
+
+                function postLink(scope, element, attrs, ngModelCtrl) {
+                    element.append($compile('<div tg-component-render-template="$templates.main.wrapper"></div>')(scope));
+
+                    var clickedOnElement = false,
+                        onDocumentClick = function () {
+                            if (!clickedOnElement) {
+                                $timeout(function () {
+                                    scope.closePopup();
+                                });
+                            }
+                            clickedOnElement = false;
+                        };
+
+                    $document.on('click', onDocumentClick);
+
+                    element.on('click', function () {
+                        clickedOnElement = true;
+                    });
+
+                    scope.$on('$destroy', function () {
+                        angular.forEach(scope.$templates, function (tplType) {
+                            if (tplType) {
+                                angular.forEach(tplType, function (tpl) {
+                                    if (tpl && tpl.appendTo) {
+                                        if (tpl.element) {
+                                            tpl.element.remove();
+                                        }
+                                    }
+                                });
+                            }
                         });
 
-                        scope.hasChilds = function (item) {
-                            return (item.hasOwnProperty('childs') &&
-                            Array.isArray(item.childs) &&
-                            item.childs.length > 0);
-                        };
+                        $document.off('click', onDocumentClick);
+                    });
+                }
 
-                        scope.goRoot = function () {
-                            scope.$level = 0;
-                            scope.$dataHolder.filteredItems = scope.getSource();
-                        };
+                return {
+                    pre: preLink,
+                    post: postLink
+                };
+            },
+            controller: ['$scope', '$element', '$attrs', function ($scope, $element, $attrs) {
+                var self = this;
 
-                        scope.goForward = function (item) {
-                            scope.$level = scope.getItemLevel(item) + 1;
+                self.$type = 'tgDropdown';
+                self.$name = !$scope.tgDropdownId ? (self.$type + '_' + $scope.$id) : $scope.tgDropdownId;
+                self.$scope = $scope;
+                self.$element = $element;
+                self.$attrs = $attrs;
+                self.$supportEvents = true;
 
-                            if (scope.$level >= 0) {
-                                scope.selectItem(item);
-                            } else {
-                                scope.goRoot();
-                            }
-                        };
+                this.$setSelectedItemTemplate = function (tpl) {
+                    $scope.$templates.main.selectedItem.setTemplate(tpl);
+                };
 
-                        scope.goBack = function (item) {
-                            var paths = scope.collectPaths(item),
-                                idx = paths.length - 2;
+                this.$setPopupHeaderTemplate = function (tpl) {
+                    $scope.$templates.popup.header.setTemplate(tpl);
+                };
+
+                this.$setItemTemplate = function (tpl) {
+                    $scope.$templates.popup.item.setTemplate(tpl);
+                };
+
+                this.$setPopupFooterTemplate = function (tpl) {
+                    $scope.$templates.popup.footer.setTemplate(tpl);
+                };
+
+                this.refreshSource = function () {
+                    return $scope.refreshSource();
+                };
+
+                this.selectItem = function (item) {
+                    $scope.selectItem(item);
+                };
+
+                this.$overrideFn = function (fnName, fn) {
+                    var baseFn = $scope[fnName] || angular.noop;
+
+                    $scope[fnName] = function overridenFunction() {
+                        var tmpBase = this.$baseFn,
+                            ret;
+
+                        this.$baseFn = baseFn;
+                        ret = fn.apply(this, arguments);
+                        this.$baseFn = tmpBase;
+
+                        return ret;
+                    };
+                };
+
+                $tgComponents.$addInstance(self);
+
+                $scope.$on('$destroy', function () {
+                    $tgComponents.$removeInstance(self);
+                });
+            }]
+        };
+    }
+
+    /*
+     * DROP-DOWN EXTENSIONS
+     */
+    tgDropdownStage.$inject = ['$injector'];
+
+    function tgDropdownStage($injector) {
+        return {
+            restrict: 'A',
+            require: 'tgDropdown',
+            scope: false,
+            compile: function (tElement, tAttrs) {
+                function preLink(scope, element, attrs, tgDropdownCtrl) {
+                    var RenderTemplateModel = $injector.get('tgComponentRenderTemplateModel'),
+                        source;
+
+                    scope = tgDropdownCtrl.$scope;
+
+                    scope.$templates.popup.wrapper = new RenderTemplateModel('popup.wrapper', attrs.tgDropdownPopupTemplateUrl || 'tg-dropdown-stage-popup.tpl.html');
+
+                    scope.$paths = [];
+                    scope.$level = 0;
+
+                    tgDropdownCtrl.$overrideFn('openPopup', function () {
+                        this.$baseFn();
+
+                        if (scope.$selectedItem) {
+                            var paths = scope.collectPaths(scope.$selectedItem),
+                                idx = paths.length - 1;
 
                             if (idx >= 0) {
                                 scope.$level = idx + 1;
@@ -581,81 +586,205 @@
                             } else {
                                 scope.goRoot();
                             }
-                        };
+                        } else {
+                            scope.$level = 0;
+                        }
+                    });
 
-                        scope.collectPaths = function (item) {
-                            var paths = [],
-                                itm = null;
+                    tgDropdownCtrl.$overrideFn('selectItem', function (item) {
+                        if (scope.hasChilds(item)) {
+                            source = scope.$dataHolder.filteredItems = item.childs;
+                        } else {
+                            scope.$paths = scope.collectPaths(item);
+                            this.$baseFn(item);
+                        }
+                    });
 
-                            var findItem = function (src) {
-                                var i, n;
+                    tgDropdownCtrl.$overrideFn('getSource', function (isBase) {
+                        if (isBase) {
+                            return this.$baseFn();
+                        }
 
-                                if (Array.isArray(src)) {
-                                    for (i = 0, n = src.length; i < n; i++) {
-                                        itm = src[i];
+                        return source;
+                    });
 
-                                        if (itm === item) {
-                                            return itm;
-                                        }
+                    tgDropdownCtrl.$overrideFn('selectItemEventPrepare', function (item) {
+                        var evt = this.$baseFn(item);
 
-                                        if (scope.hasChilds(itm)) {
-                                            itm = findItem(itm.childs);
+                        evt.$paths = scope.$paths;
 
-                                            if (itm) {
-                                                paths.unshift(src[i]);
+                        return evt;
+                    });
+
+                    tgDropdownCtrl.$overrideFn('updateSelectedItemFromModel', function (value, getItemModelValueFn) {
+                        if (value !== undefined) {
+                            if (getItemModelValueFn(scope.$selectedItem) !== value) {
+                                var itm;
+
+                                var findItem = function (src) {
+                                    if (Array.isArray(src)) {
+                                        for (var i = 0, n = src.length; i < n; i++) {
+                                            itm = src[i];
+
+                                            if (getItemModelValueFn(itm) === value) {
                                                 return itm;
+                                            }
+
+                                            if (scope.hasChilds(itm)) {
+                                                itm = findItem(itm.childs);
+
+                                                if (itm) {
+                                                    return itm;
+                                                }
                                             }
                                         }
                                     }
+                                };
+
+                                scope.$selectedItem = findItem(scope.getSource(true)) || null;
+
+                                if (scope.$selectedItem) {
+                                    scope.$paths = scope.collectPaths(scope.$selectedItem);
                                 }
-                            };
+                            }
+                        }
 
-                            findItem(scope.getSource());
+                        return (scope.$selectedItem !== null) ? value : null;
+                    });
 
-                            return paths;
+                    scope.hasChilds = function (item) {
+                        return (item.hasOwnProperty('childs') &&
+                                Array.isArray(item.childs) &&
+                                item.childs.length > 0);
+                    };
+
+                    scope.goRoot = function () {
+                        scope.$level = 0;
+                        scope.$dataHolder.filteredItems = scope.getSource(true);
+                    };
+
+                    scope.goForward = function (item) {
+                        scope.$level = scope.getItemLevel(item) + 1;
+
+                        if (scope.$level >= 0) {
+                            scope.selectItem(item);
+                        } else {
+                            scope.goRoot();
+                        }
+                    };
+
+                    scope.goBack = function (item) {
+                        var paths = scope.collectPaths(item),
+                            idx = paths.length - 2;
+
+                        if (idx >= 0) {
+                            scope.$level = idx + 1;
+                            scope.selectItem(paths[idx]);
+                        } else {
+                            scope.goRoot();
+                        }
+                    };
+
+                    scope.collectPaths = function (item) {
+                        var paths = [],
+                            itm = null;
+
+                        var findItem = function (src) {
+                            var i, n;
+
+                            if (Array.isArray(src)) {
+                                for (i = 0, n = src.length; i < n; i++) {
+                                    itm = src[i];
+
+                                    if (itm === item) {
+                                        return itm;
+                                    }
+
+                                    if (scope.hasChilds(itm)) {
+                                        itm = findItem(itm.childs);
+
+                                        if (itm) {
+                                            paths.unshift(src[i]);
+                                            return itm;
+                                        }
+                                    }
+                                }
+                            }
                         };
 
-                        scope.getItemLevel = function (item) {
-                            var level = -1,
-                                itm = null;
+                        findItem(scope.getSource(true));
 
-                            var findItem = function (src) {
-                                if (Array.isArray(src)) {
-                                    for (var i = 0, n = src.length; i < n; i++) {
-                                        itm = src[i];
+                        return paths;
+                    };
 
-                                        if (itm === item) {
+                    scope.getItemLevel = function (item) {
+                        var level = -1,
+                            itm = null;
+
+                        var findItem = function (src) {
+                            if (Array.isArray(src)) {
+                                for (var i = 0, n = src.length; i < n; i++) {
+                                    itm = src[i];
+
+                                    if (itm === item) {
+                                        level++;
+                                        return itm;
+                                    }
+
+                                    if (scope.hasChilds(itm)) {
+                                        itm = findItem(itm.childs);
+
+                                        if (itm) {
                                             level++;
                                             return itm;
                                         }
-
-                                        if (scope.hasChilds(itm)) {
-                                            itm = findItem(itm.childs);
-
-                                            if (itm) {
-                                                level++;
-                                                return itm;
-                                            }
-                                        }
                                     }
                                 }
-                            };
-
-                            findItem(scope.getSource());
-
-                            return level;
+                            }
                         };
 
-                        tgDropdownCtrl.getPaths = function () {
-                            return scope.$paths;
-                        };
-                    }
+                        findItem(scope.getSource(true));
 
-                    return {
-                        pre: preLink,
-                        post: null
+                        return level;
+                    };
+
+                    tgDropdownCtrl.getPaths = function () {
+                        return scope.$paths;
                     };
                 }
-            };
-        }]);
+
+                return {
+                    pre: preLink,
+                    post: undefined
+                };
+            }
+        };
+    }
+
+    /*
+     * DROP-DOWN TEMPLATE PARTS
+     */
+    tgDropdownSelectedItemTemplate.$inject = ['tgComponentsTemplate'];
+
+    function tgDropdownSelectedItemTemplate(tgComponentsTemplate) {
+        return tgComponentsTemplate.transcludeTemplate('^?tgDropdown', '$setSelectedItemTemplate');
+    }
+
+    tgDropdownPopupHeaderTemplate.$inject = ['tgComponentsTemplate'];
+
+    function tgDropdownPopupHeaderTemplate(tgComponentsTemplate) {
+        return tgComponentsTemplate.transcludeTemplate('^?tgDropdown', '$setPopupHeaderTemplate');
+    }
+
+    tgDropdownItemTemplate.$inject = ['tgComponentsTemplate'];
+
+    function tgDropdownItemTemplate(tgComponentsTemplate) {
+        return tgComponentsTemplate.transcludeTemplate('^?tgDropdown', '$setItemTemplate');
+    }
+
+    tgDropdownPopupFooterTemplate.$inject = ['tgComponentsTemplate'];
+
+    function tgDropdownPopupFooterTemplate(tgComponentsTemplate) {
+        return tgComponentsTemplate.transcludeTemplate('^?tgDropdown', '$setPopupFooterTemplate');
+    }
 })();
