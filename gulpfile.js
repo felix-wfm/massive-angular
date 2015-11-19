@@ -126,7 +126,7 @@ gulp.task('vendor.scripts', function () {
 });
 
 gulp.task('dev.clean', function (cb) {
-    del([paths.dev + '/*'], cb);
+    return del([paths.dev + '/*'], cb);
 });
 
 gulp.task('dev.build', ['dev.clean'], function () {
@@ -155,7 +155,7 @@ gulp.task('dev', ['dev.build'], function () {
 });
 
 gulp.task('release.clean', function (cb) {
-    del([paths.release + '/*'], cb);
+    return del([paths.release + '/*'], cb);
 });
 
 gulp.task('release.build', ['release.clean'], function () {

@@ -20,6 +20,11 @@ angular.module('app')
                     templateUrl: './view/extensions/tgComponents.html',
                     controller: 'ComponentsController'
                 })
+                .state('extensions.tgForm', {
+                    url: '/tgForm',
+                    templateUrl: './view/extensions/tgForm.html',
+                    controller: 'FormController'
+                })
                 .state('components', {
                     url: '/components',
                     templateUrl: './view/components/index.html'
