@@ -167,6 +167,21 @@
             return (ref && isFunction(ref.then));
         }
 
+        function overrideFn(context, fnName, fn) {
+            var baseFn = context[fnName] || angular.noop;
+
+            context[fnName] = function overrideFunction() {
+                var args = arguments;
+                var params = Array.prototype.slice.call(args);
+
+                params.unshift(function () {
+                    return baseFn.apply(this, arguments.length ? arguments : args);
+                }.bind(this));
+
+                return fn.apply(this, params);
+            };
+        }
+
         return {
             isObject: isObject,
             isArray: isArray,
@@ -180,7 +195,8 @@
             naturalJoin: naturalJoin,
             sort: sort,
             isApplyInProgress: isApplyInProgress,
-            isPromise: isPromise
+            isPromise: isPromise,
+            overrideFn: overrideFn
         };
     }
 })();
