@@ -173,9 +173,14 @@
             context[fnName] = function overrideFunction() {
                 var args = arguments;
                 var params = Array.prototype.slice.call(args);
+                var isCalledLikeConstructor = this instanceof overrideFunction;
 
                 params.unshift(function () {
-                    return baseFn.apply(this, arguments.length ? arguments : args);
+                    var _args = arguments.length ? arguments : args;
+
+                    return isCalledLikeConstructor ?
+                        new (Function.prototype.bind.apply(baseFn, _args)) :
+                        baseFn.apply(this, _args);
                 }.bind(this));
 
                 return fn.apply(this, params);
