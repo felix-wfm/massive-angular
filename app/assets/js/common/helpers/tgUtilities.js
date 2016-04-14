@@ -171,9 +171,9 @@
             var baseFn = context[fnName] || angular.noop;
 
             context[fnName] = function overrideFunction() {
-                var args = arguments;
-                var params = Array.prototype.slice.call(args);
-                var isCalledLikeConstructor = this instanceof overrideFunction;
+                var args = arguments,
+                    params = Array.prototype.slice.call(args),
+                    isCalledLikeConstructor = this instanceof overrideFunction;
 
                 params.unshift(function () {
                     var _args = arguments.length ? arguments : args;
