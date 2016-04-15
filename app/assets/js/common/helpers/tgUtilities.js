@@ -168,7 +168,7 @@
         }
 
         function overrideFn(context, fnName, fn) {
-            var baseFn = context[fnName] || angular.noop;
+            var baseFn = context[fnName] || function () { };
 
             context[fnName] = function overrideFunction() {
                 var args = arguments,
@@ -176,11 +176,16 @@
                     isCalledLikeConstructor = this instanceof overrideFunction;
 
                 params.unshift(function () {
-                    var _args = arguments.length ? arguments : args;
+                    var _args = arguments.length ? arguments : args,
+                        _params = Array.prototype.slice.call(_args);
 
-                    return isCalledLikeConstructor ?
-                        new (Function.prototype.bind.apply(baseFn, _args)) :
-                        baseFn.apply(this, _args);
+                    if (isCalledLikeConstructor) {
+                        _params.unshift(this);
+
+                        return new (Function.prototype.bind.apply(baseFn, _params));
+                    }
+
+                    return baseFn.apply(this, _params);
                 }.bind(this));
 
                 return fn.apply(this, params);
