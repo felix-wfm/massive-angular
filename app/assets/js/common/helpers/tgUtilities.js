@@ -190,6 +190,8 @@
 
                 return fn.apply(this, params);
             };
+
+            return baseFn;
         }
 
         return {
